@@ -6,6 +6,8 @@ dependencies:
     sdk: flutter
   video_player:
     path: ../
+  wakelock: 0.1.4+2
+  auto_orientation: ^1.0.6
 
 dev_dependencies:
   flutter_test:
@@ -13,10 +15,8 @@ dev_dependencies:
   flutter_driver:
     sdk: flutter
   test: any
-  pedantic: ^1.8.0
 
 flutter:
   uses-material-design: true
   assets:
-   - assets/flutter-mark-square-64.png
    - assets/Butterfly-209.mp4
