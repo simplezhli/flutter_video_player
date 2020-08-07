@@ -204,10 +204,13 @@ class ChewieController extends ChangeNotifier {
       DeviceOrientation.landscapeRight,
     ],
     this.routePageBuilder,
+    this.initComplete,
   }) : assert(videoPlayerController != null,
   'You must provide a controller to play a video') {
     _initialize();
   }
+  
+  final void Function() initComplete;
 
   /// The controller for the video you want to play
   final VideoPlayerController videoPlayerController;
@@ -301,6 +304,9 @@ class ChewieController extends ChangeNotifier {
     if ((autoInitialize || autoPlay) &&
         !videoPlayerController.value.initialized) {
       await videoPlayerController.initialize();
+      if (initComplete != null) {
+        initComplete();
+      }
     }
 
     if (autoPlay) {

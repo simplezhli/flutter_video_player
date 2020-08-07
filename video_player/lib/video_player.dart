@@ -389,6 +389,9 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     if (_isDisposed) {
       return;
     }
+    if (value.duration == null) {
+      return;
+    }
     if (position > value.duration) {
       position = value.duration;
     } else if (position < const Duration()) {

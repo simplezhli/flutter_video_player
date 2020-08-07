@@ -300,21 +300,17 @@ class _MaterialControlsState extends State<MaterialControls>
       child: AnimatedOpacity(
         opacity: _hideStuff ? 0.0 : 1.0,
         duration: Duration(milliseconds: 300),
-        child: ClipRect(
-          child: Container(
-            child: Container(
-              height: barHeight,
-              padding: EdgeInsets.only(
-                left: 8.0,
-                right: 4.0,
-              ),
-              child: Icon(
-                (_latestValue != null && _latestValue.volume > 0)
-                    ? Icons.volume_up
-                    : Icons.volume_off,
-                color: Colors.white,
-              ),
-            ),
+        child: Container(
+          height: barHeight,
+          padding: EdgeInsets.only(
+            left: 8.0,
+            right: 4.0,
+          ),
+          child: Icon(
+            (_latestValue != null && _latestValue.volume > 0)
+                ? Icons.volume_up
+                : Icons.volume_off,
+            color: Colors.white,
           ),
         ),
       ),
@@ -368,7 +364,10 @@ class _MaterialControlsState extends State<MaterialControls>
 
     if ((controller.value != null && controller.value.isPlaying) ||
         chewieController.autoPlay) {
+      animationController.forward();
       _startHideTimer();
+    } else {
+      animationController.reverse();
     }
 
     if (chewieController.showControlsOnInitialize) {

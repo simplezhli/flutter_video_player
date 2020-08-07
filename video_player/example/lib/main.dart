@@ -55,8 +55,14 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
     _chewieController = ChewieController(
         videoPlayerController: _videoPlayerController1,
         aspectRatio: 3 / 2,
-        autoPlay: false,
+        autoInitialize: true,
+        autoPlay: true,
         looping: false,
+        initComplete: () {
+          setState(() {
+            
+          });
+        },
         routePageBuilder: (BuildContext context, Animation<double> animation,
             Animation<double> secondAnimation, provider) {
           return AnimatedBuilder(
@@ -128,8 +134,14 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
                     _chewieController = ChewieController(
                       videoPlayerController: _videoPlayerController1,
                       aspectRatio: 3 / 2,
+                      autoInitialize: true,
                       autoPlay: false,
                       looping: false,
+                      initComplete: () {
+                        setState(() {
+
+                        });
+                      },
                     );
                   });
                 },
@@ -149,8 +161,14 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
                     _chewieController = ChewieController(
                       videoPlayerController: _videoPlayerController2,
                       aspectRatio: 3 / 2,
+                      autoInitialize: true,
                       autoPlay: false,
                       looping: false,
+                      initComplete: () {
+                        setState(() {
+
+                        });
+                      },
                     );
                   });
                 },
