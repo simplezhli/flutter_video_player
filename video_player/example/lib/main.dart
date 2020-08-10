@@ -4,12 +4,10 @@
 
 // ignore_for_file: public_member_api_docs
 
-import 'package:auto_orientation/auto_orientation.dart';
 /// An example of using the plugin, controlling lifecycle and playback of the
 /// video.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_player.dart';
 
@@ -53,6 +51,7 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
     _videoPlayerController2 = VideoPlayerController.network(
         'http://vfx.mtime.cn/Video/2019/03/19/mp4/190319222227698228.mp4');
     _chewieController = ChewieController(
+        allowedScreenSleep: false,
         videoPlayerController: _videoPlayerController1,
         aspectRatio: 3 / 2,
         autoInitialize: true,
@@ -63,37 +62,6 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
             
           });
         },
-        routePageBuilder: (BuildContext context, Animation<double> animation,
-            Animation<double> secondAnimation, provider) {
-          return AnimatedBuilder(
-            animation: animation,
-            builder: (BuildContext context, Widget child) {
-              return VideoScaffold(
-                child: Scaffold(
-                  resizeToAvoidBottomPadding: false,
-                  body: Container(
-                    alignment: Alignment.center,
-                    color: Colors.black,
-                    child: provider,
-                  ),
-                ),
-              );
-            },
-          );
-        }
-      // Try playing around with some of these other options:
-
-      // showControls: false,
-      // materialProgressColors: ChewieProgressColors(
-      //   playedColor: Colors.red,
-      //   handleColor: Colors.blue,
-      //   backgroundColor: Colors.grey,
-      //   bufferedColor: Colors.lightGreen,
-      // ),
-      // placeholder: Container(
-      //   color: Colors.grey,
-      // ),
-      // autoInitialize: true,
     );
   }
 
@@ -110,10 +78,8 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
     return Column(
       children: <Widget>[
         Expanded(
-          child: Center(
-            child: Chewie(
-              controller: _chewieController,
-            ),
+          child: Chewie(
+            controller: _chewieController,
           ),
         ),
         FlatButton(
@@ -182,41 +148,5 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
         ),
       ],
     );
-  }
-}
-
-class VideoScaffold extends StatefulWidget {
-  const VideoScaffold({Key key, this.child}) : super(key: key);
-
-  final Widget child;
-
-  @override
-  State<StatefulWidget> createState() => _VideoScaffoldState();
-}
-
-class _VideoScaffoldState extends State<VideoScaffold> {
-  @override
-  void initState() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeRight,
-      DeviceOrientation.landscapeLeft,
-    ]);
-    AutoOrientation.landscapeAutoMode();
-    super.initState();
-  }
-
-  @override
-  dispose() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    AutoOrientation.portraitAutoMode();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.child;
   }
 }

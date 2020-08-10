@@ -140,6 +140,7 @@ class ChewieState extends State<Chewie> {
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
+//      AutoOrientation.landscapeAutoMode();
     }
 
     if (!widget.controller.allowedScreenSleep && isMobile) {
@@ -162,6 +163,7 @@ class ChewieState extends State<Chewie> {
         widget.controller.systemOverlaysAfterFullScreen);
     SystemChrome.setPreferredOrientations(
         widget.controller.deviceOrientationsAfterFullScreen);
+//    AutoOrientation.portraitAutoMode();
   }
 }
 
@@ -184,7 +186,6 @@ class ChewieController extends ChangeNotifier {
     this.startAt,
     this.looping = false,
     this.fullScreenByDefault = false,
-    this.cupertinoProgressColors,
     this.materialProgressColors,
     this.placeholder,
     this.overlay,
@@ -193,15 +194,12 @@ class ChewieController extends ChangeNotifier {
     this.customControls,
     this.errorBuilder,
     this.allowedScreenSleep = true,
-    this.isLive = false,
     this.allowFullScreen = true,
     this.allowMuting = true,
     this.systemOverlaysAfterFullScreen = SystemUiOverlay.values,
     this.deviceOrientationsAfterFullScreen = const [
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
     ],
     this.routePageBuilder,
     this.initComplete,
@@ -247,10 +245,6 @@ class ChewieController extends ChangeNotifier {
   /// Will fallback to fitting within the space allowed.
   final double aspectRatio;
 
-  /// The colors to use for controls on iOS. By default, the iOS player uses
-  /// colors sampled from the original iOS 11 designs.
-  final ChewieProgressColors cupertinoProgressColors;
-
   /// The colors to use for the Material Progress Bar. By default, the Material
   /// player uses the colors from your Theme.
   final ChewieProgressColors materialProgressColors;
@@ -267,9 +261,6 @@ class ChewieController extends ChangeNotifier {
 
   /// Defines if the player will sleep in fullscreen or not
   final bool allowedScreenSleep;
-
-  /// Defines if the controls should be for live stream video
-  final bool isLive;
 
   /// Defines if the fullscreen control should be shown
   final bool allowFullScreen;

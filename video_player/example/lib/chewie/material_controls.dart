@@ -77,7 +77,7 @@ class _MaterialControlsState extends State<MaterialControls>
             duration: Duration(milliseconds: 300),
             opacity: _hideStuff ? 0.0 : 1.0,
             child: Container(
-              padding: EdgeInsets.only(bottom: chewieController.isLive ? 0 : 20),
+              padding: EdgeInsets.only(bottom: 20),
               decoration: !_hideStuff
                   ? BoxDecoration(
                   gradient: LinearGradient(
@@ -138,23 +138,6 @@ class _MaterialControlsState extends State<MaterialControls>
     super.didChangeDependencies();
   }
 
-  Widget _buildLiveIndicator() {
-    return Container(
-        margin: EdgeInsets.only(left: 10),
-        alignment: Alignment.center,
-        child: Row(children: [
-          Container(
-            margin: EdgeInsets.only(right: 5),
-            height: 7,
-            width: 7,
-            decoration:
-            BoxDecoration(shape: BoxShape.circle, color: Colors.red),
-            child: SizedBox(),
-          ),
-          const Text('LIVE', style: TextStyle(color: Colors.white))
-        ]));
-  }
-
   AnimatedOpacity _buildBottomBar(
       BuildContext context,
       ) {
@@ -164,20 +147,18 @@ class _MaterialControlsState extends State<MaterialControls>
       opacity: _hideStuff ? 0.0 : 1.0,
       duration: Duration(milliseconds: 300),
       child: Container(
-        height: !chewieController.isLive ? barHeight : 48,
+        height: barHeight,
         child: Stack(
           children: <Widget>[
             Positioned(
               top: 0,
               left: 0,
               right: 0,
-              bottom: chewieController.isLive ? 0 : null,
+              bottom: null,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  chewieController.isLive
-                      ? _buildLiveIndicator()
-                      : _buildPosition(iconColor),
+                  _buildPosition(iconColor),
                   Spacer(),
                   chewieController.allowMuting
                       ? _buildMuteButton(controller)
@@ -188,13 +169,12 @@ class _MaterialControlsState extends State<MaterialControls>
                 ],
               ),
             ),
-            !chewieController.isLive ?
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: _buildProgressBar(),
-              ) : const SizedBox.shrink(),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _buildProgressBar(),
+            )
           ],
         ),
       ),
@@ -260,7 +240,6 @@ class _MaterialControlsState extends State<MaterialControls>
                       child: IconButton(
                         icon: _latestValue != null
                             && _latestValue.position >= _latestValue.duration
-                            && !chewieController.isLive
                             ? Icon(Icons.replay,
                             semanticLabel: 'Replay',
                             size: 50.0,
@@ -326,25 +305,30 @@ class _MaterialControlsState extends State<MaterialControls>
         : Duration.zero;
 
     return Padding(
-        padding: EdgeInsets.only(left: 10.0),
-        child: RichText(
-            text: TextSpan(
-                text: '${formatDuration(position)}',
-                children: [
-                  TextSpan(
-                      text: ' / ',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(.75),
-                        fontSize: 14.0,
-                      )),
-                  TextSpan(
-                      text: '${formatDuration(duration)}',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(.75),
-                        fontSize: 14.0,
-                      )),
-                ],
-                style: TextStyle(color: Colors.white, fontSize: 14.0))));
+      padding: EdgeInsets.only(left: 10.0),
+      child: RichText(
+        text: TextSpan(
+          text: '${formatDuration(position)}',
+          children: [
+            TextSpan(
+              text: ' / ',
+              style: TextStyle(
+                color: Colors.white.withOpacity(.75),
+                fontSize: 14.0,
+              ),
+            ),
+            TextSpan(
+              text: '${formatDuration(duration)}',
+              style: TextStyle(
+                color: Colors.white.withOpacity(.75),
+                fontSize: 14.0,
+              ),
+            ),
+          ],
+          style: TextStyle(color: Colors.white, fontSize: 14.0),
+        ),
+      ),
+    );
   }
 
   void _cancelAndRestartTimer() {
@@ -364,10 +348,7 @@ class _MaterialControlsState extends State<MaterialControls>
 
     if ((controller.value != null && controller.value.isPlaying) ||
         chewieController.autoPlay) {
-      animationController.forward();
       _startHideTimer();
-    } else {
-      animationController.reverse();
     }
 
     if (chewieController.showControlsOnInitialize) {
@@ -404,18 +385,13 @@ class _MaterialControlsState extends State<MaterialControls>
       } else {
         _cancelAndRestartTimer();
 
-        if (!controller.value.initialized) {
-          controller.initialize().then((_) {
-            animationController.forward();
-            controller.play();
-          });
-        } else {
+        if (controller.value.initialized) {
           if (isFinished) {
             controller.seekTo(Duration(seconds: 0));
           }
           animationController.forward();
           controller.play();
-        }
+        } 
       }
     });
   }
@@ -431,6 +407,25 @@ class _MaterialControlsState extends State<MaterialControls>
   void _updateState() {
     setState(() {
       _latestValue = controller.value;
+      if ((controller.value != null && controller.value.isPlaying)) {
+        animationController.forward();
+
+      } else {
+        if (!controller.value.initialized) {
+          if (chewieController.autoPlay) {
+            animationController.forward();
+          }
+        } else {
+          animationController.reverse();
+        }
+      }
+
+      /// 视频播放结束显示控制面板
+      if (_latestValue != null
+          && _latestValue.position >= _latestValue.duration) {
+        _hideTimer?.cancel();
+        _hideStuff = false;
+      }
     });
   }
 

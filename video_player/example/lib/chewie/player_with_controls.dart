@@ -11,53 +11,51 @@ class PlayerWithControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ChewieController chewieController = ChewieController.of(context);
-    double _calculateAspectRatio(BuildContext context) {
-      final size = MediaQuery.of(context).size;
-      final width = size.width;
-      final height = size.height;
-
-      return width > height ? width / height : height / width;
-    }
-
-    Widget _buildControls(
-        BuildContext context,
-        ChewieController chewieController,
-        ) {
-      return chewieController.showControls
-          ? chewieController.customControls != null
-          ? chewieController.customControls
-          : MaterialControls()
-          : Container();
-    }
-
-    Container _buildPlayerWithControls(
-        ChewieController chewieController, BuildContext context) {
-      return Container(
-        child: Stack(
-          children: <Widget>[
-            chewieController.placeholder ?? const SizedBox.shrink(),
-            Center(
-              child: AspectRatio(
-                aspectRatio: chewieController.videoPlayerController.value.aspectRatio,
-                child: VideoPlayer(chewieController.videoPlayerController),
-              ),
-            ),
-            chewieController.overlay ?? const SizedBox.shrink(),
-            _buildControls(context, chewieController),
-          ],
-        ),
-      );
-    }
-
+   
     return Center(
-      child: Container(
-        height: MediaQuery.of(context).size.height,
-        width: MediaQuery.of(context).size.width,
-        child: AspectRatio(
-          aspectRatio: _calculateAspectRatio(context),
-          child: _buildPlayerWithControls(chewieController, context),
-        ),
+      child: AspectRatio(
+        aspectRatio: chewieController.isFullScreen ? _calculateAspectRatio(context) : chewieController.videoPlayerController.value.aspectRatio,
+        child: _buildPlayerWithControls(chewieController, context),
       ),
     );
   }
+
+  double _calculateAspectRatio(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    return width > height ? width / height : height / width;
+  }
+
+  Widget _buildControls(
+      BuildContext context,
+      ChewieController chewieController,
+      ) {
+    return chewieController.showControls
+        ? chewieController.customControls != null
+        ? chewieController.customControls
+        : MaterialControls()
+        : Container();
+  }
+
+  Container _buildPlayerWithControls(
+      ChewieController chewieController, BuildContext context) {
+    return Container(
+      child: Stack(
+        children: <Widget>[
+          chewieController.placeholder ?? const SizedBox.shrink(),
+          Center(
+            child: AspectRatio(
+              aspectRatio: chewieController.videoPlayerController.value.aspectRatio,
+              child: VideoPlayer(chewieController.videoPlayerController),
+            ),
+          ),
+          chewieController.overlay ?? const SizedBox.shrink(),
+          _buildControls(context, chewieController),
+        ],
+      ),
+    );
+  }
+
 }
