@@ -119,8 +119,8 @@ final class VideoPlayer {
       @Override
       public void onError(ErrorInfo errorInfo) {
         //出错事件
-        if (eventSink != null) {
-          eventSink.error("VideoError", "Video player had error " + errorInfo.toString(), null);
+        if (eventSink != null && errorInfo != null) {
+          eventSink.error(errorInfo.getCode() + "", errorInfo.getMsg(), errorInfo.getExtra());
         }
       }
     });

@@ -119,7 +119,7 @@ class VideoPlayerValue {
       isLooping: isLooping ?? this.isLooping,
       isBuffering: isBuffering ?? this.isBuffering,
       volume: volume ?? this.volume,
-      errorDescription: errorDescription ?? this.errorDescription,
+      errorDescription: errorDescription,
     );
   }
 
@@ -263,7 +263,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           break;
         case VideoEventType.completed:
           value = value.copyWith(isPlaying: false, position: value.duration);
-          _timer?.cancel();
+          cancelTimer();
           break;
         case VideoEventType.bufferingUpdate:
           value = value.copyWith(buffered: event.buffered);
@@ -282,7 +282,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     void errorListener(Object obj) {
       final PlatformException e = obj;
       value = VideoPlayerValue.erroneous(e.message);
-      _timer?.cancel();
+      cancelTimer();
       if (!initializingCompleter.isCompleted) {
         initializingCompleter.completeError(obj);
       }
@@ -300,7 +300,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       await _creatingCompleter.future;
       if (!_isDisposed) {
         _isDisposed = true;
-        _timer?.cancel();
+        cancelTimer();
         await _eventSubscription?.cancel();
         await _videoPlayerPlatform.dispose(_textureId);
       }
@@ -346,21 +346,9 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     }
     if (value.isPlaying) {
       await _videoPlayerPlatform.play(_textureId);
-      _timer = Timer.periodic(
-        const Duration(milliseconds: 500),
-        (Timer timer) async {
-          if (_isDisposed) {
-            return;
-          }
-          final Duration newPosition = await position;
-          if (_isDisposed) {
-            return;
-          }
-          _updatePosition(newPosition);
-        },
-      );
+      createTimer();
     } else {
-      _timer?.cancel();
+      cancelTimer();
       await _videoPlayerPlatform.pause(_textureId);
     }
   }
@@ -396,6 +384,41 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     }
     await _videoPlayerPlatform.seekTo(_textureId, position);
     _updatePosition(position);
+  }
+
+  /// 只更新position，不执行seekTo
+  void updatePosition(Duration position) {
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    if (position > value.duration) {
+      position = value.duration;
+    } else if (position < const Duration()) {
+      position = const Duration();
+    }
+    _updatePosition(position);
+  }
+
+  void createTimer() {
+    cancelTimer();
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 500),
+          (Timer timer) async {
+        if (_isDisposed) {
+          return;
+        }
+        final Duration newPosition = await position;
+        if (_isDisposed) {
+          return;
+        }
+        print('-----');
+        _updatePosition(newPosition);
+      },
+    );
+  }
+
+  void cancelTimer() {
+    _timer?.cancel();
   }
 
   /// Sets the audio volume of [this].
