@@ -210,6 +210,8 @@ class VideoEvent {
     this.duration,
     this.size,
     this.buffered,
+    this.percent,
+    this.kbps,
   });
 
   /// The type of the event.
@@ -229,6 +231,10 @@ class VideoEvent {
   ///
   /// Only used if [eventType] is [VideoEventType.bufferingUpdate].
   final List<DurationRange> buffered;
+  
+  final int percent;
+  
+  final double kbps;
 
   @override
   bool operator ==(Object other) {
@@ -238,7 +244,9 @@ class VideoEvent {
             eventType == other.eventType &&
             duration == other.duration &&
             size == other.size &&
-            listEquals(buffered, other.buffered);
+            listEquals(buffered, other.buffered) &&
+            percent == other.percent &&
+            kbps == other.kbps;
   }
 
   @override
@@ -246,7 +254,9 @@ class VideoEvent {
       eventType.hashCode ^
       duration.hashCode ^
       size.hashCode ^
-      buffered.hashCode;
+      buffered.hashCode ^
+      percent.hashCode ^
+      kbps.hashCode;
 }
 
 /// Type of the event.
@@ -268,6 +278,15 @@ enum VideoEventType {
 
   /// The video stopped to buffer.
   bufferingEnd,
+
+  /// 缓冲开始。
+  loadingBegin,
+
+  /// 缓冲进度
+  loadingProgress,
+
+  /// 缓冲结束
+  loadingEnd,
 
   /// An unknown event has been received.
   unknown,

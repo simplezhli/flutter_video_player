@@ -1,4 +1,4 @@
-
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -11,11 +11,19 @@ class PlayerWithControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ChewieController chewieController = ChewieController.of(context);
-   
+    double aspectRatio;
+    if (chewieController.aspectRatio == null) {
+      aspectRatio = chewieController.videoPlayerController.value.aspectRatio;
+    } else {
+      aspectRatio = min(chewieController.aspectRatio, chewieController.videoPlayerController.value.aspectRatio);
+    }
     return Center(
-      child: AspectRatio(
-        aspectRatio: chewieController.isFullScreen ? _calculateAspectRatio(context) : chewieController.videoPlayerController.value.aspectRatio,
-        child: _buildPlayerWithControls(chewieController, context),
+      child: Container(
+        color: Colors.black,
+        child: AspectRatio(
+          aspectRatio: chewieController.isFullScreen ? _calculateAspectRatio(context) : aspectRatio,
+          child: _buildPlayerWithControls(chewieController, context),
+        ),
       ),
     );
   }
@@ -36,7 +44,7 @@ class PlayerWithControls extends StatelessWidget {
         ? chewieController.customControls != null
         ? chewieController.customControls
         : MaterialControls()
-        : Container();
+        : const SizedBox.shrink();
   }
 
   Container _buildPlayerWithControls(

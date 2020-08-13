@@ -115,6 +115,37 @@ final class VideoPlayer {
         eventSink.success(event);
       }
     });
+    aliyunVodPlayer.setOnStateChangedListener(new IPlayer.OnStateChangedListener() {
+      @Override
+      public void onStateChanged(int newState) {
+        //播放器状态改变事件
+        
+      }
+    });
+    aliyunVodPlayer.setOnLoadingStatusListener(new IPlayer.OnLoadingStatusListener() {
+      @Override
+      public void onLoadingBegin() {
+        Map<String, Object> event = new HashMap<>();
+        event.put("event", "loadingBegin");
+        eventSink.success(event);
+      }
+
+      @Override
+      public void onLoadingProgress(int percent, float kbps) {
+        Map<String, Object> event = new HashMap<>();
+        event.put("event", "loadingProgress");
+        event.put("percent", percent);
+        event.put("kbps", kbps);
+        eventSink.success(event);
+      }
+
+      @Override
+      public void onLoadingEnd() {
+        Map<String, Object> event = new HashMap<>();
+        event.put("event", "loadingEnd");
+        eventSink.success(event);
+      }
+    });
     aliyunVodPlayer.setOnErrorListener(new IPlayer.OnErrorListener() {
       @Override
       public void onError(ErrorInfo errorInfo) {

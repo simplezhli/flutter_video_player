@@ -29,10 +29,13 @@ class VideoPlayerValue {
     this.size,
     this.position = const Duration(),
     this.buffered = const <DurationRange>[],
-    this.isPlaying = false,
+    this.isPlaying = true,
     this.isLooping = false,
     this.isBuffering = false,
+    this.isLoading = false,
     this.volume = 1.0,
+    this.percent = 0,
+    this.kbps = 0,
     this.errorDescription,
   });
 
@@ -64,8 +67,14 @@ class VideoPlayerValue {
   /// True if the video is currently buffering.
   final bool isBuffering;
 
+  final bool isLoading;
+  
   /// The current volume of the playback.
   final double volume;
+  
+  final int percent;
+  
+  final double kbps;
 
   /// A description of the error if present.
   ///
@@ -107,7 +116,10 @@ class VideoPlayerValue {
     bool isPlaying,
     bool isLooping,
     bool isBuffering,
+    bool isLoading,
     double volume,
+    int percent,
+    double kbps,
     String errorDescription,
   }) {
     return VideoPlayerValue(
@@ -118,7 +130,10 @@ class VideoPlayerValue {
       isPlaying: isPlaying ?? this.isPlaying,
       isLooping: isLooping ?? this.isLooping,
       isBuffering: isBuffering ?? this.isBuffering,
+      isLoading: isLoading ?? this.isLoading,
       volume: volume ?? this.volume,
+      percent: percent ?? this.percent,
+      kbps: kbps ?? this.kbps,
       errorDescription: errorDescription,
     );
   }
@@ -133,7 +148,10 @@ class VideoPlayerValue {
         'isPlaying: $isPlaying, '
         'isLooping: $isLooping, '
         'isBuffering: $isBuffering'
+        'isLoading: $isLoading'
         'volume: $volume, '
+        'percent: $percent, '
+        'kbps: $kbps, '
         'errorDescription: $errorDescription)';
   }
 }
@@ -273,6 +291,16 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           break;
         case VideoEventType.bufferingEnd:
           value = value.copyWith(isBuffering: false);
+          break;
+        case VideoEventType.loadingBegin:
+          value = value.copyWith(isLoading: true);
+          break;
+        case VideoEventType.loadingProgress:
+          print('percent: ${event.percent} ---- kbps: ${event.kbps}');
+          value = value.copyWith(percent: event.percent, kbps: event.kbps);
+          break;
+        case VideoEventType.loadingEnd:
+          value = value.copyWith(isLoading: false);
           break;
         case VideoEventType.unknown:
           break;

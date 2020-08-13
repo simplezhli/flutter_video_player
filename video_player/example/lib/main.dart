@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_player.dart';
+import 'package:video_player_example/deer_controls.dart';
 
 void main() {
   runApp(
@@ -47,21 +48,21 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
   void initState() {
     super.initState();
     _videoPlayerController1 = VideoPlayerController.network(
-        'http://vfx.mtime.cn/Video/2019/02/04/mp4/190204084208765161.mp4');
+        'http://vfx.mtime.cn/Video/2019/03/19/mp4/190319104618910544.mp4');
     _videoPlayerController2 = VideoPlayerController.network(
         'http://vfx.mtime.cn/Video/2019/03/19/mp4/190319222227698228.mp4');
     _chewieController = ChewieController(
-        allowedScreenSleep: false,
-        videoPlayerController: _videoPlayerController1,
-        aspectRatio: 3 / 2,
-        autoInitialize: true,
-        autoPlay: true,
-        looping: false,
-        initComplete: () {
-          setState(() {
-            
-          });
-        },
+      allowedScreenSleep: false,
+      customControls: DeerControls(),
+      videoPlayerController: _videoPlayerController1,
+      autoInitialize: true,
+      autoPlay: true,
+      looping: false,
+      initComplete: () {
+        setState(() {
+
+        });
+      },
     );
   }
 
@@ -98,8 +99,8 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
                     _videoPlayerController2.pause();
                     _videoPlayerController2.seekTo(Duration(seconds: 0));
                     _chewieController = ChewieController(
+                      customControls: DeerControls(),
                       videoPlayerController: _videoPlayerController1,
-                      aspectRatio: 3 / 2,
                       autoInitialize: true,
                       autoPlay: false,
                       looping: false,
@@ -125,8 +126,8 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
                     _videoPlayerController1.pause();
                     _videoPlayerController1.seekTo(Duration(seconds: 0));
                     _chewieController = ChewieController(
+                      customControls: DeerControls(),
                       videoPlayerController: _videoPlayerController2,
-                      aspectRatio: 3 / 2,
                       autoInitialize: true,
                       autoPlay: false,
                       looping: false,

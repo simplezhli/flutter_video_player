@@ -114,6 +114,16 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
           return VideoEvent(eventType: VideoEventType.bufferingStart);
         case 'bufferingEnd':
           return VideoEvent(eventType: VideoEventType.bufferingEnd);
+        case 'loadingBegin':
+          return VideoEvent(eventType: VideoEventType.loadingBegin);
+        case 'loadingProgress':
+          return VideoEvent(
+            eventType: VideoEventType.loadingProgress,
+            percent: map['percent']?.toInt() ?? 0,
+            kbps: map['kbps']?.toDouble() ?? 0.0,
+          );
+        case 'loadingEnd':
+          return VideoEvent(eventType: VideoEventType.loadingEnd);
         default:
           return VideoEvent(eventType: VideoEventType.unknown);
       }

@@ -33,8 +33,7 @@ class _VideoProgressBarState extends State<MaterialVideoProgressBar> {
   }
 
   VoidCallback listener;
-  bool _controllerWasPlaying = false;
-
+  Duration _position;
   VideoPlayerController get controller => widget.controller;
 
   @override
@@ -51,18 +50,12 @@ class _VideoProgressBarState extends State<MaterialVideoProgressBar> {
 
   @override
   Widget build(BuildContext context) {
-    void seekToRelativePosition(Offset globalPosition) {
-      final box = context.findRenderObject() as RenderBox;
-      final Offset tapPos = box.globalToLocal(globalPosition);
-      final double relative = tapPos.dx / box.size.width;
-      final Duration position = controller.value.duration * relative;
-      controller.seekTo(position);
-    }
-
     return GestureDetector(
-      child: Center(
+      child: Container(
+        alignment: Alignment.center,
+        height: 30.0,
         child: Container(
-          height: 10,
+          height: 10.0,
           width: MediaQuery.of(context).size.width,
           color: Colors.transparent,
           child: CustomPaint(
@@ -77,11 +70,8 @@ class _VideoProgressBarState extends State<MaterialVideoProgressBar> {
         if (!controller.value.initialized) {
           return;
         }
-        _controllerWasPlaying = controller.value.isPlaying;
-        if (_controllerWasPlaying) {
-          controller.pause();
-        }
 
+        controller.cancelTimer();
         if (widget.onDragStart != null) {
           widget.onDragStart();
         }
@@ -97,13 +87,7 @@ class _VideoProgressBarState extends State<MaterialVideoProgressBar> {
         }
       },
       onHorizontalDragEnd: (DragEndDetails details) {
-        if (_controllerWasPlaying) {
-          controller.play();
-        }
-
-        if (widget.onDragEnd != null) {
-          widget.onDragEnd();
-        }
+        onDragEnd();
       },
       onTapDown: (TapDownDetails details) {
         if (!controller.value.initialized) {
@@ -111,7 +95,33 @@ class _VideoProgressBarState extends State<MaterialVideoProgressBar> {
         }
         seekToRelativePosition(details.globalPosition);
       },
+      onTapUp: (TapUpDetails details) {
+        onDragEnd();
+      },
     );
+  }
+  
+  void onDragEnd() {
+    controller.seekTo(_position);
+    if (controller.value.isPlaying) {
+      controller.createTimer();
+    }
+
+    if (widget.onDragEnd != null) {
+      widget.onDragEnd();
+    }
+  }
+
+  void seekToRelativePosition(Offset globalPosition) {
+    if (globalPosition == null) {
+      return;
+    }
+    final box = context.findRenderObject() as RenderBox;
+    final Offset tapPos = box.globalToLocal(globalPosition);
+    final double relative = tapPos.dx / box.size.width;
+    final Duration position = controller.value.duration * relative;
+    _position = position;
+    controller.updatePosition(position);
   }
 }
 

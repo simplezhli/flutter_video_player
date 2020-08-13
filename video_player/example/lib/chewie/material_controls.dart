@@ -113,12 +113,13 @@ class _MaterialControlsState extends State<MaterialControls>
 
   @override
   void dispose() {
-    _dispose();
+    _dispose(controller);
+    animationController?.dispose();
     super.dispose();
   }
 
-  void _dispose() {
-    controller.removeListener(_updateState);
+  void _dispose(VideoPlayerController controller) {
+    controller?.removeListener(_updateState);
     _hideTimer?.cancel();
     _initTimer?.cancel();
     _showAfterExpandCollapseTimer?.cancel();
@@ -129,9 +130,9 @@ class _MaterialControlsState extends State<MaterialControls>
     final _oldController = chewieController;
     chewieController = ChewieController.of(context);
     controller = chewieController.videoPlayerController;
-
+   
     if (_oldController != chewieController) {
-      _dispose();
+      _dispose(_oldController?.videoPlayerController);
       _initialize();
     }
 
@@ -162,10 +163,10 @@ class _MaterialControlsState extends State<MaterialControls>
                   Spacer(),
                   chewieController.allowMuting
                       ? _buildMuteButton(controller)
-                      : Container(),
+                      : const SizedBox.shrink(),
                   chewieController.allowFullScreen
                       ? _buildExpandButton()
-                      : Container(),
+                      : const SizedBox.shrink(),
                 ],
               ),
             ),
@@ -419,9 +420,9 @@ class _MaterialControlsState extends State<MaterialControls>
           animationController.reverse();
         }
       }
-
+      
       /// 视频播放结束显示控制面板
-      if (_latestValue != null
+      if (controller.value.initialized && _latestValue != null
           && _latestValue.position >= _latestValue.duration) {
         _hideTimer?.cancel();
         _hideStuff = false;
