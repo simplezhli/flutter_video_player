@@ -210,6 +210,7 @@ class VideoEvent {
     this.duration,
     this.size,
     this.buffered,
+    this.state,
     this.percent,
     this.kbps,
   });
@@ -232,6 +233,8 @@ class VideoEvent {
   /// Only used if [eventType] is [VideoEventType.bufferingUpdate].
   final List<DurationRange> buffered;
   
+  final VideoState state;
+  
   final int percent;
   
   final double kbps;
@@ -245,6 +248,7 @@ class VideoEvent {
             duration == other.duration &&
             size == other.size &&
             listEquals(buffered, other.buffered) &&
+            state == other.state &&
             percent == other.percent &&
             kbps == other.kbps;
   }
@@ -255,8 +259,21 @@ class VideoEvent {
       duration.hashCode ^
       size.hashCode ^
       buffered.hashCode ^
+      state.hashCode ^
       percent.hashCode ^
       kbps.hashCode;
+}
+
+enum VideoState {
+  unknow,
+  idle,
+  initalized,
+  prepared,
+  started,
+  paused,
+  stopped,
+  completion,
+  error,
 }
 
 /// Type of the event.
@@ -279,6 +296,8 @@ enum VideoEventType {
   /// The video stopped to buffer.
   bufferingEnd,
 
+  stateChanged,
+  
   /// 缓冲开始。
   loadingBegin,
 

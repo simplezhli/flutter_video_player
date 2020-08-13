@@ -25,7 +25,8 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   VideoPlayerValue _latestValue;
   /// 用于显示拖动进度条时的时间提示框
   bool _dragging = false;
-  
+
+  Duration _latestPosition;
   @override
   void initState() {
     if (animationController == null) {
@@ -98,24 +99,33 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
       Container(
         color: Colors.black,
         child: Center(
-          child: RaisedButton.icon(
-            label: const Text('错误', style: TextStyle(color: Colors.white, fontSize: 16.0),),
-            color: Colors.transparent,
-            icon: Icon(
-              Icons.error,
-              semanticLabel: 'Error',
-              size: 30.0,
-              color: Colors.white,
-            ),
-            onPressed: () async {
-              if (!_latestValue.initialized) {
-                await controller.initialize();
-              }
-              await controller.play();
-              if (chewieController.initComplete != null) {
-                chewieController.initComplete();
-              }
-            },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_latestValue.errorDescription, style: const TextStyle(color: Colors.white, fontSize: 14.0),),
+              SizedBox(height: 10,),
+              OutlineButton.icon(
+                borderSide: const BorderSide(color: Colors.white),
+                label: const Text('重试', style: const TextStyle(color: Colors.white, fontSize: 14.0),),
+                icon: Icon(
+                  Icons.replay,
+                  semanticLabel: 'Replay',
+                  size: 20.0,
+                  color: Colors.white,
+                ),
+                onPressed: () async {
+                  if (!_latestValue.initialized) {
+                    await controller.initialize();
+                  }
+                  await controller.play();
+                  // TODO
+                  await controller.seekTo(Duration(seconds: 20));
+                  if (chewieController.initComplete != null) {
+                    chewieController.initComplete();
+                  }
+                },
+              )
+            ],
           ),
         ),
       );
@@ -150,27 +160,21 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
           bottom: 0,
           child: _buildBottomBar(),
         ),
-        // TODO 加载中状态待完善
-        if (_latestValue != null && !_latestValue.isPlaying &&
-            _latestValue.duration == null || _latestValue.isBuffering)
-          Positioned.fill(
-            child: const Center(
-              child: const CircularProgressIndicator(),
-            ),
-          ),
+        _buildLoading(),
         if (_latestValue != null && _latestValue.initialized && 
-            _latestValue.position >= _latestValue.duration && !_dragging)
+            _latestValue.position >= _latestValue.duration && !_dragging && !_latestValue.isLoading)
           Positioned.fill(
             child: Container(
               color: Colors.black,
               child: Center(
-                child: RaisedButton.icon(
-                  label: const Text('重播', style: TextStyle(color: Colors.white, fontSize: 16.0),),
+                child: OutlineButton.icon(
+                  borderSide: BorderSide(color: Colors.white),
+                  label: const Text('重播', style: TextStyle(color: Colors.white, fontSize: 14.0),),
                   color: Colors.transparent,
                   icon: Icon(
                     Icons.replay,
                     semanticLabel: 'Replay',
-                    size: 30.0,
+                    size: 20.0,
                     color: Colors.white,
                   ),
                   onPressed: _playPause,
@@ -180,6 +184,20 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         ),
       ],
     );
+  }
+  
+  Widget _buildLoading() {
+    if (_latestValue != null && (_latestValue.state == VideoState.initalized
+        || _latestValue.state == VideoState.idle || _latestValue.state == VideoState.prepared) || _latestValue.isLoading) {
+      _latestPosition = _latestValue.position;
+      return const Positioned.fill(
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    } else {
+      return const Positioned.fill(child: const SizedBox.shrink());
+    }
   }
   
   Widget _buildBottomBar() {

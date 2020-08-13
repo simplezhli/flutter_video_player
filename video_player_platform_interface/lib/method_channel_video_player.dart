@@ -114,6 +114,12 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
           return VideoEvent(eventType: VideoEventType.bufferingStart);
         case 'bufferingEnd':
           return VideoEvent(eventType: VideoEventType.bufferingEnd);
+        case 'stateChanged':
+          int state = map['state']?.toInt() ?? -1;
+          return VideoEvent(
+            eventType: VideoEventType.stateChanged,
+            state: getVideoState(state),
+          );
         case 'loadingBegin':
           return VideoEvent(eventType: VideoEventType.loadingBegin);
         case 'loadingProgress':
@@ -128,6 +134,29 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
           return VideoEvent(eventType: VideoEventType.unknown);
       }
     });
+  }
+  
+  VideoState getVideoState(int state) {
+    switch(state) {
+      case 0:
+        return VideoState.idle;
+      case 1:
+        return VideoState.initalized;
+      case 2:
+        return VideoState.prepared;
+      case 3:
+        return VideoState.started;
+      case 4:
+        return VideoState.paused;
+      case 5:
+        return VideoState.stopped;
+      case 6:
+        return VideoState.completion;
+      case 7:
+        return VideoState.error;
+      default:
+        return VideoState.unknow;
+    }
   }
 
   @override

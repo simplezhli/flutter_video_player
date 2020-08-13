@@ -50,7 +50,7 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
     _videoPlayerController1 = VideoPlayerController.network(
         'http://vfx.mtime.cn/Video/2019/03/19/mp4/190319104618910544.mp4');
     _videoPlayerController2 = VideoPlayerController.network(
-        'http://vfx.mtime.cn/Video/2019/03/19/mp4/190319222227698228.mp4');
+        'http://vfx.mtime.cn/Video/2019/03/13/mp4/190313094901111138.mp4');
     _chewieController = ChewieController(
       allowedScreenSleep: false,
       customControls: DeerControls(),

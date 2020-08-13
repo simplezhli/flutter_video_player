@@ -119,7 +119,10 @@ final class VideoPlayer {
       @Override
       public void onStateChanged(int newState) {
         //播放器状态改变事件
-        
+        Map<String, Object> event = new HashMap<>();
+        event.put("event", "stateChanged");
+        event.put("state", newState);
+        eventSink.success(event);
       }
     });
     aliyunVodPlayer.setOnLoadingStatusListener(new IPlayer.OnLoadingStatusListener() {
@@ -160,8 +163,10 @@ final class VideoPlayer {
       public void onInfo(InfoBean infoBean) {
         if (infoBean.getCode() == InfoCode.BufferedPosition) {
           //更新bufferedPosition
-          mVideoBufferedPosition = (int) infoBean.getExtraValue();
-          sendBufferingUpdate();
+          if (mVideoBufferedPosition != (int) infoBean.getExtraValue()) {
+            mVideoBufferedPosition = (int) infoBean.getExtraValue();
+            sendBufferingUpdate();
+          }
         } else if (infoBean.getCode() == InfoCode.CurrentPosition) {
           //更新currentPosition
           mCurrentPosition = infoBean.getExtraValue();
@@ -177,6 +182,10 @@ final class VideoPlayer {
     // iOS supports a list of buffered ranges, so here is a list with a single range.
     event.put("values", Collections.singletonList(range));
     eventSink.success(event);
+  }
+  
+  void prepare() {
+    aliyunVodPlayer.prepare();
   }
 
   void play() {
@@ -197,7 +206,8 @@ final class VideoPlayer {
   }
 
   void seekTo(int location) {
-    aliyunVodPlayer.seekTo(location);
+    mCurrentPosition = location;
+    aliyunVodPlayer.seekTo(location, IPlayer.SeekMode.Accurate);
   }
 
   long getPosition() {

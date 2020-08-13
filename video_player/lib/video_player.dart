@@ -12,7 +12,7 @@ import 'package:meta/meta.dart';
 
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 export 'package:video_player_platform_interface/video_player_platform_interface.dart'
-    show DurationRange, DataSourceType, VideoFormat;
+    show DurationRange, DataSourceType, VideoFormat, VideoState;
 
 final VideoPlayerPlatform _videoPlayerPlatform = VideoPlayerPlatform.instance
   // This will clear all open videos on the platform when a full restart is
@@ -33,6 +33,7 @@ class VideoPlayerValue {
     this.isLooping = false,
     this.isBuffering = false,
     this.isLoading = false,
+    this.state = VideoState.idle,
     this.volume = 1.0,
     this.percent = 0,
     this.kbps = 0,
@@ -45,7 +46,12 @@ class VideoPlayerValue {
   /// Returns an instance with a `null` [Duration] and the given
   /// [errorDescription].
   VideoPlayerValue.erroneous(String errorDescription)
-      : this(duration: null, errorDescription: errorDescription);
+      : this(
+    duration: null,
+    errorDescription: errorDescription, 
+    state: VideoState.error,
+    isLoading: false,
+  );
 
   /// The total duration of the video.
   ///
@@ -71,6 +77,9 @@ class VideoPlayerValue {
   
   /// The current volume of the playback.
   final double volume;
+
+  /// -1:unknow, 0: idle, 1:initalized, 2:prepared, 3:started, 4:paused, 5:stopped, 6: completion, 7:error.
+  final VideoState state;
   
   final int percent;
   
@@ -118,6 +127,7 @@ class VideoPlayerValue {
     bool isBuffering,
     bool isLoading,
     double volume,
+    VideoState state,
     int percent,
     double kbps,
     String errorDescription,
@@ -132,6 +142,7 @@ class VideoPlayerValue {
       isBuffering: isBuffering ?? this.isBuffering,
       isLoading: isLoading ?? this.isLoading,
       volume: volume ?? this.volume,
+      state: state ?? this.state,
       percent: percent ?? this.percent,
       kbps: kbps ?? this.kbps,
       errorDescription: errorDescription,
@@ -147,8 +158,8 @@ class VideoPlayerValue {
         'buffered: [${buffered.join(', ')}], '
         'isPlaying: $isPlaying, '
         'isLooping: $isLooping, '
-        'isBuffering: $isBuffering'
-        'isLoading: $isLoading'
+        'isBuffering: $isBuffering, '
+        'isLoading: $isLoading, '
         'volume: $volume, '
         'percent: $percent, '
         'kbps: $kbps, '
@@ -267,7 +278,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       if (_isDisposed) {
         return;
       }
-
+      print('**********${event.eventType}');
       switch (event.eventType) {
         case VideoEventType.initialized:
           value = value.copyWith(
@@ -280,7 +291,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           _applyPlayPause();
           break;
         case VideoEventType.completed:
-          value = value.copyWith(isPlaying: false, position: value.duration);
+          value = value.copyWith(isPlaying: false, position: value.duration, isLoading: false,);
           cancelTimer();
           break;
         case VideoEventType.bufferingUpdate:
@@ -292,11 +303,13 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         case VideoEventType.bufferingEnd:
           value = value.copyWith(isBuffering: false);
           break;
+        case VideoEventType.stateChanged:
+          value = value.copyWith(state: event.state);
+          break;
         case VideoEventType.loadingBegin:
           value = value.copyWith(isLoading: true);
           break;
         case VideoEventType.loadingProgress:
-          print('percent: ${event.percent} ---- kbps: ${event.kbps}');
           value = value.copyWith(percent: event.percent, kbps: event.kbps);
           break;
         case VideoEventType.loadingEnd:
@@ -357,7 +370,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
   /// Pauses the video.
   Future<void> pause() async {
-    value = value.copyWith(isPlaying: false);
+    value = value.copyWith(isPlaying: false, isLoading: false,);
     await _applyPlayPause();
   }
 
@@ -439,7 +452,6 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         if (_isDisposed) {
           return;
         }
-        print('-----');
         _updatePosition(newPosition);
       },
     );
