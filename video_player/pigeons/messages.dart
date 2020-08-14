@@ -49,3 +49,6 @@ void configurePigeon(PigeonOptions opts) {
       'android/src/main/java/io/flutter/plugins/videoplayer/Messages.java';
   opts.javaOptions.package = 'io.flutter.plugins.videoplayer';
 }
+
+
+/// flutter pub run pigeon  --input pigeons/messages.dart

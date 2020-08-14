@@ -343,6 +343,10 @@ class ChewieController extends ChangeNotifier {
     isPlaying ? pause() : play();
   }
 
+  Future<void> prepare() async {
+    await videoPlayerController.prepare();
+  }
+
   Future<void> play() async {
     await videoPlayerController.play();
   }

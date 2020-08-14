@@ -80,6 +80,10 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('setLooping() has not been implemented.');
   }
 
+  Future<void> prepare(int textureId) {
+    throw UnimplementedError('prepare() has not been implemented.');
+  }
+
   /// Starts the video playback.
   Future<void> play(int textureId) {
     throw UnimplementedError('play() has not been implemented.');

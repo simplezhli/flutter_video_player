@@ -351,6 +351,13 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     super.dispose();
   }
 
+  Future<void> prepare() async {
+    if (_isDisposed) {
+      return;
+    }
+    await _videoPlayerPlatform.prepare(_textureId);
+  }
+  
   /// Starts playing the video.
   ///
   /// This method returns a future that completes as soon as the "play" command
@@ -560,7 +567,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
   @override
   Widget build(BuildContext context) {
     return _textureId == null
-        ? Container()
+        ? const SizedBox.shrink()
         : _videoPlayerPlatform.buildView(_textureId);
   }
 }

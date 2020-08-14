@@ -8,6 +8,7 @@ import android.view.Surface;
 import com.aliyun.player.AliPlayer;
 import com.aliyun.player.AliPlayerFactory;
 import com.aliyun.player.IPlayer;
+import com.aliyun.player.bean.ErrorCode;
 import com.aliyun.player.bean.ErrorInfo;
 import com.aliyun.player.bean.InfoBean;
 import com.aliyun.player.bean.InfoCode;
@@ -67,7 +68,7 @@ final class VideoPlayer {
 
     setupVideoPlayer(eventChannel, textureEntry);
     //准备播放
-    aliyunVodPlayer.prepare();
+    prepare();
   }
 
   private void setupVideoPlayer(EventChannel eventChannel, TextureRegistry.SurfaceTextureEntry textureEntry) {
@@ -93,6 +94,9 @@ final class VideoPlayer {
       public void onVideoSizeChanged(int width, int height) {
         textureEntry.surfaceTexture().setDefaultBufferSize(width, height);
         // 视频宽高变化通知
+        if (aliyunVodPlayer == null) {
+          return;
+        }
         aliyunVodPlayer.redraw();
       }
     });
@@ -154,7 +158,18 @@ final class VideoPlayer {
       public void onError(ErrorInfo errorInfo) {
         //出错事件
         if (eventSink != null && errorInfo != null) {
-          eventSink.error(errorInfo.getCode() + "", errorInfo.getMsg(), errorInfo.getExtra());
+          String errorMsg;
+          if (errorInfo.getCode().getValue() == ErrorCode.ERROR_LOADING_TIMEOUT.getValue()) {
+            errorMsg = "加载超时";
+          } else if (errorInfo.getCode().getValue() == ErrorCode.ERROR_NETWORK_CONNECT_TIMEOUT.getValue()) {
+            errorMsg = "网络连接超时";
+          } else if (errorInfo.getCode().getValue() == ErrorCode.ERROR_NETWORK_COULD_NOT_CONNECT.getValue()) {
+            errorMsg = "无法连接到服务器";
+          } else {
+            errorMsg = errorInfo.getMsg();
+          }
+          
+          eventSink.error(errorInfo.getCode().getValue() + "", errorMsg, errorInfo.getExtra());
         }
       }
     });
@@ -185,27 +200,45 @@ final class VideoPlayer {
   }
   
   void prepare() {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
     aliyunVodPlayer.prepare();
   }
 
   void play() {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
     aliyunVodPlayer.start();
   }
 
   void pause() {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
     aliyunVodPlayer.pause();
   }
 
   void setLooping(boolean value) {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
     aliyunVodPlayer.setLoop(value);
   }
 
   void setVolume(double value) {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
     float bracketedValue = (float) Math.max(0.0, Math.min(1.0, value));
     aliyunVodPlayer.setVolume(bracketedValue);
   }
 
   void seekTo(int location) {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
     mCurrentPosition = location;
     aliyunVodPlayer.seekTo(location, IPlayer.SeekMode.Accurate);
   }

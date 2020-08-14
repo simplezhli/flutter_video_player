@@ -55,6 +55,11 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
+  Future<void> prepare(int textureId) {
+    return _api.prepare(TextureMessage()..textureId = textureId);
+  }
+
+  @override
   Future<void> play(int textureId) {
     return _api.play(TextureMessage()..textureId = textureId);
   }

@@ -20,3 +20,4 @@ String formatDuration(Duration position) {
 
   return formattedTime;
 }
+

@@ -27,6 +27,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   bool _dragging = false;
 
   Duration _latestPosition;
+  
   @override
   void initState() {
     if (animationController == null) {
@@ -117,9 +118,10 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
                   if (!_latestValue.initialized) {
                     await controller.initialize();
                   }
+                  animationController.forward();
+                  /// 恢复之前播放位置
+                  await controller.seekTo(_latestPosition);
                   await controller.play();
-                  // TODO
-                  await controller.seekTo(Duration(seconds: 20));
                   if (chewieController.initComplete != null) {
                     chewieController.initComplete();
                   }
@@ -188,8 +190,11 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   
   Widget _buildLoading() {
     if (_latestValue != null && (_latestValue.state == VideoState.initalized
-        || _latestValue.state == VideoState.idle || _latestValue.state == VideoState.prepared) || _latestValue.isLoading) {
-      _latestPosition = _latestValue.position;
+        || _latestValue.state == VideoState.idle) || _latestValue.isLoading) {
+      if (_latestValue.isLoading) {
+        /// 播放途中卡主，记录当前位置，便于后面恢复播放。
+        _latestPosition = _latestValue.position;
+      }
       return const Positioned.fill(
         child: Center(
           child: CircularProgressIndicator(),
