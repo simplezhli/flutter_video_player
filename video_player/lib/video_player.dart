@@ -36,6 +36,7 @@ class VideoPlayerValue {
     this.state = VideoState.idle,
     this.volume = 1.0,
     this.brightness,
+    this.initialBrightness,
     this.percent = 0,
     this.kbps = 0,
     this.errorDescription,
@@ -79,13 +80,19 @@ class VideoPlayerValue {
   /// The current volume of the playback.
   final double volume;
 
+  /// 当前页面亮度
   final double brightness;
+
+  /// 初始亮度，便于恢复亮度使用
+  final double initialBrightness;
   
   /// -1:unknow, 0: idle, 1:initalized, 2:prepared, 3:started, 4:paused, 5:stopped, 6: completion, 7:error.
   final VideoState state;
-  
+
+  /// 视频加载进度
   final int percent;
   
+  /// 视频加载速度
   final double kbps;
 
   /// A description of the error if present.
@@ -131,6 +138,7 @@ class VideoPlayerValue {
     bool isLoading,
     double volume,
     double brightness,
+    double initialBrightness,
     VideoState state,
     int percent,
     double kbps,
@@ -147,6 +155,7 @@ class VideoPlayerValue {
       isLoading: isLoading ?? this.isLoading,
       volume: volume ?? this.volume,
       brightness: brightness ?? this.brightness,
+      initialBrightness: initialBrightness ?? this.initialBrightness,
       state: state ?? this.state,
       percent: percent ?? this.percent,
       kbps: kbps ?? this.kbps,
@@ -167,6 +176,7 @@ class VideoPlayerValue {
         'isLoading: $isLoading, '
         'volume: $volume, '
         'brightness: $brightness, '
+        'initialBrightness: $initialBrightness, '
         'percent: $percent, '
         'kbps: $kbps, '
         'errorDescription: $errorDescription)';
@@ -338,9 +348,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
     // 获取初始亮度
     double brightness = await getBrightness();
-    print(brightness);
-    value = value.copyWith(brightness: brightness);
-
+    value = value.copyWith(brightness: brightness, initialBrightness: brightness);
+    
     _eventSubscription = _videoPlayerPlatform
         .videoEventsFor(_textureId)
         .listen(eventListener, onError: errorListener);
@@ -510,6 +519,10 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
   void _updatePosition(Duration position) {
     value = value.copyWith(position: position);
+  }
+
+  Future<void> restoreBrightness() async {
+    await setBrightness(value.initialBrightness);
   }
 }
 

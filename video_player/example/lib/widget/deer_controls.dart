@@ -5,8 +5,10 @@ import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_player.dart';
 import 'package:video_player_example/chewie/chewie_progress_colors.dart';
 import 'package:video_player_example/chewie/material_progress_bar.dart';
-
-import 'chewie/utils.dart';
+import 'package:video_player_example/chewie/utils.dart';
+import 'package:video_player_example/widget/gesture_dialog.dart';
+import 'package:video_player_example/widget/seek_dialog.dart';
+import 'package:video_player_example/widget/tips_view.dart';
 
 class DeerControls extends StatefulWidget {
 
@@ -29,8 +31,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   bool _volumeDragging = false;
   /// 用于显示亮度提示框
   bool _brightnessDragging = false;
-  ///  用于恢复之前播放位置
-  Duration _latestPosition;
+ 
   /// 手势起始点
   Offset _initialOffset;
   /// 记录进度调节位置
@@ -39,7 +40,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   Duration _currentPosition;
   double _currentVolume;
   double _currentBrightness;
-  
+
   @override
   void initState() {
     if (animationController == null) {
@@ -102,180 +103,50 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   
   @override
   Widget build(BuildContext context) {
-    
-    if (_latestValue.hasError) {
-      return chewieController.errorBuilder != null ? 
-      chewieController.errorBuilder(
-        context,
-        chewieController.videoPlayerController.value.errorDescription,
-      ):
-      Container(
-        color: Colors.black,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_latestValue.errorDescription, style: const TextStyle(color: Colors.white, fontSize: 14.0),),
-              SizedBox(height: 10,),
-              OutlineButton.icon(
-                borderSide: const BorderSide(color: Colors.white),
-                label: const Text('重试', style: const TextStyle(color: Colors.white, fontSize: 14.0),),
-                icon: Icon(
-                  Icons.replay,
-                  semanticLabel: 'Replay',
-                  size: 20.0,
-                  color: Colors.white,
-                ),
-                onPressed: () async {
-                  if (!_latestValue.initialized) {
-                    await controller.initialize();
-                  }
-                  animationController.forward();
-                  await controller.seekTo(_latestPosition);
-                  await controller.play();
-                  if (chewieController.initComplete != null) {
-                    chewieController.initComplete();
-                  }
-                },
-              )
-            ],
-          ),
-        ),
-      );
-    }
-    
     return Stack(
       children: [
         Positioned.fill(
-          child: Center(
-            child: _progressBarDragging ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              height: 36.0,
-              decoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(6.0),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildPosition()
-                ],
-              ),
-            ) : const SizedBox.shrink(),
-          ),
-        ),
-        Positioned.fill(
-          child: Center(
-            child: _volumeDragging ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              height: 46.0,
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(6.0),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _latestValue.volume == 0 ? Icons.volume_off : Icons.volume_up,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 8,),
-                  Container(
-                    width: 100,
-                    child: LinearProgressIndicator(
-                      value: _latestValue.volume,
-                      minHeight: 3.0,
-                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).accentColor),
-                      backgroundColor: Colors.white.withOpacity(.3),
-                    ),
-                  ),
-                ],
-              ),
-            ) : const SizedBox.shrink(),
-          ),
-        ),
-        Positioned.fill(
-          child: Center(
-            child: _brightnessDragging ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              height: 46.0,
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(6.0),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.wb_sunny,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 8,),
-                  Container(
-                    width: 100,
-                    child: LinearProgressIndicator(
-                      value: _latestValue.brightness,
-                      minHeight: 3.0,
-                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).accentColor),
-                      backgroundColor: Colors.white.withOpacity(.3),
-                    ),
-                  ),
-                ],
-              ),
-            ) : const SizedBox.shrink(),
-          ),
+          child: _buildGestureView(),
         ),
         Positioned.fill(
           child: _buildGestureDetector(),
         ),
         Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
+          left: 0, right: 0, bottom: 0,
           child: _buildBottomBar(),
         ),
-        _buildLoading(),
-        if (_latestValue != null && _latestValue.initialized && 
-            _latestValue.position >= _latestValue.duration && !_progressBarDragging && !_latestValue.isLoading)
-          Positioned.fill(
-            child: Container(
-              color: Colors.black,
-              child: Center(
-                child: OutlineButton.icon(
-                  borderSide: BorderSide(color: Colors.white),
-                  label: const Text('重播', style: TextStyle(color: Colors.white, fontSize: 14.0),),
-                  color: Colors.transparent,
-                  icon: Icon(
-                    Icons.replay,
-                    semanticLabel: 'Replay',
-                    size: 20.0,
-                    color: Colors.white,
-                  ),
-                  onPressed: _playPause,
-                ),
-              ),
-            ),
+        Positioned.fill(
+          child: TipsView(
+            replay: _playPause,
+            reTry: _reTry,
+          ),
         ),
       ],
     );
   }
   
-  Widget _buildLoading() {
-    if (_latestValue != null && (_latestValue.state == VideoState.initalized
-        || _latestValue.state == VideoState.idle) || _latestValue.isLoading) {
-      if (_latestValue.isLoading) {
-        /// 播放途中卡主，记录当前位置，便于后面恢复播放。
-        _latestPosition = _latestValue.position;
-      }
-      return const Positioned.fill(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+  Widget _buildGestureView() {
+    Widget body;
+    if (_progressBarDragging) {
+      body = SeekDialog(
+        child: _buildPosition(),
       );
-    } else {
-      return const Positioned.fill(child: const SizedBox.shrink());
     }
+    if (_volumeDragging) {
+      body = GestureDialog(
+        icon: _latestValue.volume == 0 ? Icons.volume_off : Icons.volume_up,
+        value: _latestValue.volume,
+      );
+    }
+    if (_brightnessDragging) {
+      body = GestureDialog(
+        icon: Icons.wb_sunny,
+        value: _latestValue.brightness,
+      );
+    }
+    return Center(
+      child: body ?? const SizedBox.shrink(),
+    );
   }
   
   Widget _buildBottomBar() {
@@ -410,13 +281,16 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         _initialOffset = details.globalPosition;
         _currentVolume = controller.value.volume;
         _currentBrightness = controller.value.brightness;
-        /// Android默认系统亮度为-1
-        if (_currentBrightness == -1) {
-          _currentBrightness = 0.3;
-        }
+        final RenderBox box = context.findRenderObject() as RenderBox;
         setState(() {
-          _volumeDragging = true;
-          _brightnessDragging = true;
+          /// 区分滑动左右区域
+          if (_initialOffset.dx > box.size.width / 2) {
+            _volumeDragging = true;
+            _brightnessDragging = false;
+          } else {
+            _volumeDragging = false;
+            _brightnessDragging = true;
+          }
         });
       },
       onVerticalDragUpdate: (DragUpdateDetails details) {
@@ -424,15 +298,14 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
           return;
         }
         final offsetDifference = _initialOffset.dy - details.globalPosition.dy;
-        final box = context.findRenderObject() as RenderBox;
+        final RenderBox box = context.findRenderObject() as RenderBox;
         final double relative = offsetDifference * 1.2 / box.size.height;
         double brightness = double.parse((relative + _currentBrightness).clamp(0, 1).toStringAsFixed(2));
         double volume = double.parse((relative + _currentVolume).clamp(0, 1).toStringAsFixed(1));
-        if (volume != controller.value.volume) {
+        if (volume != controller.value.volume && _volumeDragging) {
           controller.setVolume(volume);
         }
-        if (brightness != controller.value.brightness) {
-          print(brightness);
+        if (brightness != controller.value.brightness && _brightnessDragging) {
           controller.setBrightness(brightness);
         }
       },
@@ -486,25 +359,35 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
     }
     controller.updatePosition(_position);
   }
-  
-  void _playPause() {
+
+  Future<void> _reTry(Duration latestPosition) async {
+    if (!_latestValue.initialized) {
+      await controller.initialize();
+    }
+    animationController.forward();
+    await controller.seekTo(latestPosition);
+    await controller.play();
+    if (chewieController.initComplete != null) {
+      chewieController.initComplete();
+    }
+  }
+
+  Future<void> _playPause() async {
     bool isFinished = _latestValue.position >= _latestValue.duration;
 
-    setState(() {
-      if (controller.value.isPlaying) {
-        animationController.reverse();
-        controller.pause();
-      } else {
+    if (controller.value.isPlaying) {
+      animationController.reverse();
+      await controller.pause();
+    } else {
 
-        if (controller.value.initialized) {
-          if (isFinished) {
-            controller.seekTo(Duration(seconds: 0));
-          }
-          animationController.forward();
-          controller.play();
+      if (controller.value.initialized) {
+        animationController.forward();
+        if (isFinished) {
+          await controller.seekTo(Duration(seconds: 0));
         }
+        await controller.play();
       }
-    });
+    }
   }
 
   void _onExpandCollapse() {
