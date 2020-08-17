@@ -11,6 +11,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class FLTCreateMessage;
 @class FLTLoopingMessage;
 @class FLTVolumeMessage;
+@class FLTBrightnessMessage;
 @class FLTPositionMessage;
 
 @interface FLTTextureMessage : NSObject
@@ -34,6 +35,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, strong, nullable) NSNumber * volume;
 @end
 
+@interface FLTBrightnessMessage : NSObject
+@property(nonatomic, strong, nullable) NSNumber * textureId;
+@property(nonatomic, strong, nullable) NSNumber * screenBrightness;
+@end
+
 @interface FLTPositionMessage : NSObject
 @property(nonatomic, strong, nullable) NSNumber * textureId;
 @property(nonatomic, strong, nullable) NSNumber * position;
@@ -45,6 +51,8 @@ NS_ASSUME_NONNULL_BEGIN
 -(void)dispose:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)setLooping:(FLTLoopingMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)setVolume:(FLTVolumeMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)setBrightness:(FLTVolumeMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(nullable FLTBrightnessMessage *)getBrightness:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)play:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)prepare:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(nullable FLTPositionMessage *)position:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;

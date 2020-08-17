@@ -24,9 +24,21 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
 
   VideoPlayerValue _latestValue;
   /// 用于显示拖动进度条时的时间提示框
-  bool _dragging = false;
-
+  bool _progressBarDragging = false;
+  /// 用于显示音量提示框
+  bool _volumeDragging = false;
+  /// 用于显示亮度提示框
+  bool _brightnessDragging = false;
+  ///  用于恢复之前播放位置
   Duration _latestPosition;
+  /// 手势起始点
+  Offset _initialOffset;
+  /// 记录进度调节位置
+  Duration _position;
+  /// 用于进度与音量调节
+  Duration _currentPosition;
+  double _currentVolume;
+  double _currentBrightness;
   
   @override
   void initState() {
@@ -119,7 +131,6 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
                     await controller.initialize();
                   }
                   animationController.forward();
-                  /// 恢复之前播放位置
                   await controller.seekTo(_latestPosition);
                   await controller.play();
                   if (chewieController.initComplete != null) {
@@ -137,7 +148,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
       children: [
         Positioned.fill(
           child: Center(
-            child: _dragging ? Container(
+            child: _progressBarDragging ? Container(
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
               height: 36.0,
               decoration: BoxDecoration(
@@ -154,6 +165,68 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
           ),
         ),
         Positioned.fill(
+          child: Center(
+            child: _volumeDragging ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              height: 46.0,
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(6.0),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _latestValue.volume == 0 ? Icons.volume_off : Icons.volume_up,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 8,),
+                  Container(
+                    width: 100,
+                    child: LinearProgressIndicator(
+                      value: _latestValue.volume,
+                      minHeight: 3.0,
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).accentColor),
+                      backgroundColor: Colors.white.withOpacity(.3),
+                    ),
+                  ),
+                ],
+              ),
+            ) : const SizedBox.shrink(),
+          ),
+        ),
+        Positioned.fill(
+          child: Center(
+            child: _brightnessDragging ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              height: 46.0,
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(6.0),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.wb_sunny,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 8,),
+                  Container(
+                    width: 100,
+                    child: LinearProgressIndicator(
+                      value: _latestValue.brightness,
+                      minHeight: 3.0,
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).accentColor),
+                      backgroundColor: Colors.white.withOpacity(.3),
+                    ),
+                  ),
+                ],
+              ),
+            ) : const SizedBox.shrink(),
+          ),
+        ),
+        Positioned.fill(
           child: _buildGestureDetector(),
         ),
         Positioned(
@@ -164,7 +237,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         ),
         _buildLoading(),
         if (_latestValue != null && _latestValue.initialized && 
-            _latestValue.position >= _latestValue.duration && !_dragging && !_latestValue.isLoading)
+            _latestValue.position >= _latestValue.duration && !_progressBarDragging && !_latestValue.isLoading)
           Positioned.fill(
             child: Container(
               color: Colors.black,
@@ -255,10 +328,10 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   Widget _buildProgressBar() {
     return MaterialVideoProgressBar(controller,
       onDragStart: () {
-        _dragging = true;
+        _progressBarDragging = true;
       },
       onDragEnd: () {
-        _dragging = false;
+        _progressBarDragging = false;
       },
       colors: chewieController.materialProgressColors ??
           ChewieProgressColors(
@@ -306,33 +379,75 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
     return GestureDetector(
       onDoubleTap: _playPause,
       onHorizontalDragStart: (DragStartDetails details) {
-        if (!controller.value.initialized) {
+        if (!_latestValue.initialized) {
           return;
         }
         _currentPosition = _latestValue.position;
         _initialOffset = details.globalPosition;
         controller.cancelTimer();
-        _dragging = true;
+        _progressBarDragging = true;
       },
       onHorizontalDragUpdate: (DragUpdateDetails details) {
-        if (!controller.value.initialized) {
+        if (!_latestValue.initialized) {
           return;
         }
         seekToRelativePosition(details.globalPosition);
-
       },
       onHorizontalDragEnd: (DragEndDetails details) {
-        _dragging = false;
+        if (!_latestValue.initialized) {
+          return;
+        }
+        _progressBarDragging = false;
         controller.seekTo(_position);
         if (controller.value.isPlaying) {
           controller.createTimer();
         }
       },
+      onVerticalDragStart: (DragStartDetails details) {
+        if (!_latestValue.initialized) {
+          return;
+        }
+        _initialOffset = details.globalPosition;
+        _currentVolume = controller.value.volume;
+        _currentBrightness = controller.value.brightness;
+        /// Android默认系统亮度为-1
+        if (_currentBrightness == -1) {
+          _currentBrightness = 0.3;
+        }
+        setState(() {
+          _volumeDragging = true;
+          _brightnessDragging = true;
+        });
+      },
+      onVerticalDragUpdate: (DragUpdateDetails details) {
+        if (!_latestValue.initialized) {
+          return;
+        }
+        final offsetDifference = _initialOffset.dy - details.globalPosition.dy;
+        final box = context.findRenderObject() as RenderBox;
+        final double relative = offsetDifference * 1.2 / box.size.height;
+        double brightness = double.parse((relative + _currentBrightness).clamp(0, 1).toStringAsFixed(2));
+        double volume = double.parse((relative + _currentVolume).clamp(0, 1).toStringAsFixed(1));
+        if (volume != controller.value.volume) {
+          controller.setVolume(volume);
+        }
+        if (brightness != controller.value.brightness) {
+          print(brightness);
+          controller.setBrightness(brightness);
+        }
+      },
+      onVerticalDragEnd: (DragEndDetails details) {
+        if (!_latestValue.initialized) {
+          return;
+        }
+        setState(() {
+          _volumeDragging = false;
+          _brightnessDragging = false;
+        });
+      }
     );
   }
-  Offset _initialOffset;
-  Duration _position;
-  Duration _currentPosition;
+  
   void seekToRelativePosition(Offset globalPosition) {
     if (globalPosition == null) {
       return;

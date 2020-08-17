@@ -4,10 +4,20 @@
 
 package io.flutter.plugins.videoplayer;
 
+import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.Resources;
+import android.provider.Settings;
 import android.util.Log;
 import android.util.LongSparseArray;
+import android.view.Window;
+import android.view.WindowManager;
+
+import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
@@ -21,11 +31,13 @@ import io.flutter.view.FlutterMain;
 import io.flutter.view.TextureRegistry;
 
 /** Android platform implementation of the VideoPlayerPlugin. */
-public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
+public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi, ActivityAware {
   private static final String TAG = "VideoPlayerPlugin";
   private final LongSparseArray<VideoPlayer> videoPlayers = new LongSparseArray<>();
   private FlutterState flutterState;
 
+  private FlutterPluginBinding pluginBinding;
+  private ActivityPluginBinding activityBinding;
   /** Register this with the v2 embedding for the plugin to respond to lifecycle callbacks. */
   public VideoPlayerPlugin() {}
 
@@ -33,6 +45,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
     this.flutterState =
         new FlutterState(
             registrar.context(),
+            registrar.activity(),
             registrar.messenger(),
             registrar::lookupKeyForAsset,
             registrar::lookupKeyForAsset,
@@ -52,14 +65,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
 
   @Override
   public void onAttachedToEngine(FlutterPluginBinding binding) {
-    this.flutterState =
-        new FlutterState(
-            binding.getApplicationContext(),
-            binding.getBinaryMessenger(),
-            FlutterMain::getLookupKeyForAsset,
-            FlutterMain::getLookupKeyForAsset,
-            binding.getFlutterEngine().getRenderer());
-    flutterState.startListening(this, binding.getBinaryMessenger());
+    pluginBinding = binding;
   }
 
   @Override
@@ -69,6 +75,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
     }
     flutterState.stopListening(binding.getBinaryMessenger());
     flutterState = null;
+    pluginBinding = null;
   }
 
   private void disposeAllPlayers() {
@@ -147,6 +154,41 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
     player.setVolume(arg.getVolume());
   }
 
+  public void setBrightness(VolumeMessage arg) {
+    float brightness = Float.parseFloat(arg.getVolume().toString());
+    Window window = flutterState.activity.getWindow();
+    WindowManager.LayoutParams lp = window.getAttributes();
+    if (brightness < 0 || brightness > 1) {
+      lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
+    } else {
+      lp.screenBrightness = brightness;
+    }
+    window.setAttributes(lp);
+  }
+  
+  public Messages.BrightnessMessage getBrightness(TextureMessage arg) {
+    ContentResolver cr = flutterState.activity.getContentResolver();
+    int systemBrightness = Settings.System.getInt(cr, Settings.System.SCREEN_BRIGHTNESS,0);
+    
+    Messages.BrightnessMessage result = new Messages.BrightnessMessage();
+    result.setScreenBrightness((double) (systemBrightness / getBrightnessMax()));
+    return result;
+  }
+
+  // https://blog.csdn.net/jklwan/article/details/93669170
+  private float getBrightnessMax() {
+    try {
+      Resources system = Resources.getSystem();
+      int resId = system.getIdentifier("config_screenBrightnessSettingMaximum", "integer", "android");
+      if (resId != 0) {
+        return system.getInteger(resId);
+      }
+    }catch (Exception ignore){
+      
+    }
+    return 255f;
+  }
+
   public void prepare(TextureMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.prepare();
@@ -175,6 +217,35 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
     player.pause();
   }
 
+  @Override
+  public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+    activityBinding = binding;
+    this.flutterState =
+            new FlutterState(
+                    pluginBinding.getApplicationContext(),
+                    activityBinding.getActivity(),
+                    pluginBinding.getBinaryMessenger(),
+                    FlutterMain::getLookupKeyForAsset,
+                    FlutterMain::getLookupKeyForAsset,
+                    pluginBinding.getFlutterEngine().getRenderer());
+    flutterState.startListening(this, pluginBinding.getBinaryMessenger());
+  }
+
+  @Override
+  public void onDetachedFromActivityForConfigChanges() {
+    onDetachedFromActivity();
+  }
+
+  @Override
+  public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+    onAttachedToActivity(binding);
+  }
+
+  @Override
+  public void onDetachedFromActivity() {
+    activityBinding = null;
+  }
+
   private interface KeyForAssetFn {
     String get(String asset);
   }
@@ -185,6 +256,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
 
   private static final class FlutterState {
     private final Context applicationContext;
+    private final Activity activity;
     private final BinaryMessenger binaryMessenger;
     private final KeyForAssetFn keyForAsset;
     private final KeyForAssetAndPackageName keyForAssetAndPackageName;
@@ -192,11 +264,13 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
 
     FlutterState(
         Context applicationContext,
+        Activity activity,
         BinaryMessenger messenger,
         KeyForAssetFn keyForAsset,
         KeyForAssetAndPackageName keyForAssetAndPackageName,
         TextureRegistry textureRegistry) {
       this.applicationContext = applicationContext;
+      this.activity = activity;
       this.binaryMessenger = messenger;
       this.keyForAsset = keyForAsset;
       this.keyForAssetAndPackageName = keyForAssetAndPackageName;

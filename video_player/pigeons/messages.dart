@@ -19,6 +19,11 @@ class PositionMessage {
   int position;
 }
 
+class BrightnessMessage {
+  int textureId;
+  double screenBrightness;
+}
+
 class CreateMessage {
   String asset;
   String uri;
@@ -33,6 +38,8 @@ abstract class VideoPlayerApi {
   void dispose(TextureMessage msg);
   void setLooping(LoopingMessage msg);
   void setVolume(VolumeMessage msg);
+  void setBrightness(VolumeMessage msg);
+  BrightnessMessage getBrightness(TextureMessage msg);
   void play(TextureMessage msg);
   void prepare(TextureMessage msg);
   PositionMessage position(TextureMessage msg);

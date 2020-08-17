@@ -95,6 +95,28 @@ class VolumeMessage {
   }
 }
 
+class BrightnessMessage {
+  int textureId;
+  double screenBrightness;
+  // ignore: unused_element
+  Map<dynamic, dynamic> _toMap() {
+    final Map<dynamic, dynamic> pigeonMap = <dynamic, dynamic>{};
+    pigeonMap['textureId'] = textureId;
+    pigeonMap['screenBrightness'] = screenBrightness;
+    return pigeonMap;
+  }
+  // ignore: unused_element
+  static BrightnessMessage _fromMap(Map<dynamic, dynamic> pigeonMap) {
+    if (pigeonMap == null){
+      return null;
+    }
+    final BrightnessMessage result = BrightnessMessage();
+    result.textureId = pigeonMap['textureId'];
+    result.screenBrightness = pigeonMap['screenBrightness'];
+    return result;
+  }
+}
+
 class PositionMessage {
   int textureId;
   int position;
@@ -224,6 +246,50 @@ class VideoPlayerApi {
           details: error['details']);
     } else {
       // noop
+    }
+    
+  }
+  Future<void> setBrightness(VolumeMessage arg) async {
+    final Map<dynamic, dynamic> requestMap = arg._toMap();
+    const BasicMessageChannel<dynamic> channel =
+        BasicMessageChannel<dynamic>('dev.flutter.pigeon.VideoPlayerApi.setBrightness', StandardMessageCodec());
+    
+    final Map<dynamic, dynamic> replyMap = await channel.send(requestMap);
+    if (replyMap == null) {
+      throw PlatformException(
+        code: 'channel-error',
+        message: 'Unable to establish connection on channel.',
+        details: null);
+    } else if (replyMap['error'] != null) {
+      final Map<dynamic, dynamic> error = replyMap['error'];
+      throw PlatformException(
+          code: error['code'],
+          message: error['message'],
+          details: error['details']);
+    } else {
+      // noop
+    }
+    
+  }
+  Future<BrightnessMessage> getBrightness(TextureMessage arg) async {
+    final Map<dynamic, dynamic> requestMap = arg._toMap();
+    const BasicMessageChannel<dynamic> channel =
+        BasicMessageChannel<dynamic>('dev.flutter.pigeon.VideoPlayerApi.getBrightness', StandardMessageCodec());
+    
+    final Map<dynamic, dynamic> replyMap = await channel.send(requestMap);
+    if (replyMap == null) {
+      throw PlatformException(
+        code: 'channel-error',
+        message: 'Unable to establish connection on channel.',
+        details: null);
+    } else if (replyMap['error'] != null) {
+      final Map<dynamic, dynamic> error = replyMap['error'];
+      throw PlatformException(
+          code: error['code'],
+          message: error['message'],
+          details: error['details']);
+    } else {
+      return BrightnessMessage._fromMap(replyMap['result']);
     }
     
   }

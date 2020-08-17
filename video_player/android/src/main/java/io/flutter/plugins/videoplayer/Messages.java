@@ -125,6 +125,32 @@ public class Messages {
   }
 
   /** Generated class from Pigeon that represents data sent in messages. */
+  public static class BrightnessMessage {
+    private Long textureId;
+    public Long getTextureId() { return textureId; }
+    public void setTextureId(Long setterArg) { this.textureId = setterArg; }
+
+    private Double screenBrightness;
+    public Double getScreenBrightness() { return screenBrightness; }
+    public void setScreenBrightness(Double setterArg) { this.screenBrightness = setterArg; }
+
+    HashMap toMap() {
+      HashMap<String, Object> toMapResult = new HashMap<>();
+      toMapResult.put("textureId", textureId);
+      toMapResult.put("screenBrightness", screenBrightness);
+      return toMapResult;
+    }
+    static BrightnessMessage fromMap(HashMap map) {
+      BrightnessMessage fromMapResult = new BrightnessMessage();
+      Object textureId = map.get("textureId");
+      fromMapResult.textureId = (textureId == null) ? null : ((textureId instanceof Integer) ? (Integer)textureId : (Long)textureId);
+      Object screenBrightness = map.get("screenBrightness");
+      fromMapResult.screenBrightness = (Double)screenBrightness;
+      return fromMapResult;
+    }
+  }
+
+  /** Generated class from Pigeon that represents data sent in messages. */
   public static class PositionMessage {
     private Long textureId;
     public Long getTextureId() { return textureId; }
@@ -157,6 +183,8 @@ public class Messages {
     void dispose(TextureMessage arg);
     void setLooping(LoopingMessage arg);
     void setVolume(VolumeMessage arg);
+    void setBrightness(VolumeMessage arg);
+    BrightnessMessage getBrightness(TextureMessage arg);
     void play(TextureMessage arg);
     void prepare(TextureMessage arg);
     PositionMessage position(TextureMessage arg);
@@ -258,6 +286,48 @@ public class Messages {
               VolumeMessage input = VolumeMessage.fromMap((HashMap)message);
               api.setVolume(input);
               wrapped.put("result", null);
+            }
+            catch (Exception exception) {
+              wrapped.put("error", wrapError(exception));
+            }
+            reply.reply(wrapped);
+          });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(binaryMessenger, "dev.flutter.pigeon.VideoPlayerApi.setBrightness", new StandardMessageCodec());
+        if (api != null) {
+          channel.setMessageHandler((message, reply) -> {
+            HashMap<String, HashMap> wrapped = new HashMap<>();
+            try {
+              @SuppressWarnings("ConstantConditions")
+              VolumeMessage input = VolumeMessage.fromMap((HashMap)message);
+              api.setBrightness(input);
+              wrapped.put("result", null);
+            }
+            catch (Exception exception) {
+              wrapped.put("error", wrapError(exception));
+            }
+            reply.reply(wrapped);
+          });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(binaryMessenger, "dev.flutter.pigeon.VideoPlayerApi.getBrightness", new StandardMessageCodec());
+        if (api != null) {
+          channel.setMessageHandler((message, reply) -> {
+            HashMap<String, HashMap> wrapped = new HashMap<>();
+            try {
+              @SuppressWarnings("ConstantConditions")
+              TextureMessage input = TextureMessage.fromMap((HashMap)message);
+              BrightnessMessage output = api.getBrightness(input);
+              wrapped.put("result", output.toMap());
             }
             catch (Exception exception) {
               wrapped.put("error", wrapError(exception));

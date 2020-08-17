@@ -38,6 +38,10 @@ static NSDictionary* wrapResult(NSDictionary *result, FlutterError *error) {
 +(FLTVolumeMessage*)fromMap:(NSDictionary*)dict;
 -(NSDictionary*)toMap;
 @end
+@interface FLTBrightnessMessage ()
++(FLTBrightnessMessage*)fromMap:(NSDictionary*)dict;
+-(NSDictionary*)toMap;
+@end
 @interface FLTPositionMessage ()
 +(FLTPositionMessage*)fromMap:(NSDictionary*)dict;
 -(NSDictionary*)toMap;
@@ -116,6 +120,24 @@ static NSDictionary* wrapResult(NSDictionary *result, FlutterError *error) {
 }
 -(NSDictionary*)toMap {
   return [NSDictionary dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId", (self.volume ? self.volume : [NSNull null]), @"volume", nil];
+}
+@end
+
+@implementation FLTBrightnessMessage
++(FLTBrightnessMessage*)fromMap:(NSDictionary*)dict {
+  FLTBrightnessMessage* result = [[FLTBrightnessMessage alloc] init];
+  result.textureId = dict[@"textureId"];
+  if ((NSNull *)result.textureId == [NSNull null]) {
+    result.textureId = nil;
+  }
+  result.screenBrightness = dict[@"screenBrightness"];
+  if ((NSNull *)result.screenBrightness == [NSNull null]) {
+    result.screenBrightness = nil;
+  }
+  return result;
+}
+-(NSDictionary*)toMap {
+  return [NSDictionary dictionaryWithObjectsAndKeys:(self.textureId ? self.textureId : [NSNull null]), @"textureId", (self.screenBrightness ? self.screenBrightness : [NSNull null]), @"screenBrightness", nil];
 }
 @end
 
@@ -216,6 +238,40 @@ void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVi
         FLTVolumeMessage *input = [FLTVolumeMessage fromMap:message];
         [api setVolume:input error:&error];
         callback(wrapResult(nil, error));
+      }];
+    }
+    else {
+      [channel setMessageHandler:nil];
+    }
+  }
+  {
+    FlutterBasicMessageChannel *channel =
+      [FlutterBasicMessageChannel
+        messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.setBrightness"
+        binaryMessenger:binaryMessenger];
+    if (api) {
+      [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
+        FlutterError *error;
+        FLTVolumeMessage *input = [FLTVolumeMessage fromMap:message];
+        [api setBrightness:input error:&error];
+        callback(wrapResult(nil, error));
+      }];
+    }
+    else {
+      [channel setMessageHandler:nil];
+    }
+  }
+  {
+    FlutterBasicMessageChannel *channel =
+      [FlutterBasicMessageChannel
+        messageChannelWithName:@"dev.flutter.pigeon.VideoPlayerApi.getBrightness"
+        binaryMessenger:binaryMessenger];
+    if (api) {
+      [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
+        FlutterError *error;
+        FLTTextureMessage *input = [FLTTextureMessage fromMap:message];
+        FLTBrightnessMessage *output = [api getBrightness:input error:&error];
+        callback(wrapResult([output toMap], error));
       }];
     }
     else {

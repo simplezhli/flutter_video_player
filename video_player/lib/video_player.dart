@@ -35,6 +35,7 @@ class VideoPlayerValue {
     this.isLoading = false,
     this.state = VideoState.idle,
     this.volume = 1.0,
+    this.brightness,
     this.percent = 0,
     this.kbps = 0,
     this.errorDescription,
@@ -78,6 +79,8 @@ class VideoPlayerValue {
   /// The current volume of the playback.
   final double volume;
 
+  final double brightness;
+  
   /// -1:unknow, 0: idle, 1:initalized, 2:prepared, 3:started, 4:paused, 5:stopped, 6: completion, 7:error.
   final VideoState state;
   
@@ -127,6 +130,7 @@ class VideoPlayerValue {
     bool isBuffering,
     bool isLoading,
     double volume,
+    double brightness,
     VideoState state,
     int percent,
     double kbps,
@@ -142,6 +146,7 @@ class VideoPlayerValue {
       isBuffering: isBuffering ?? this.isBuffering,
       isLoading: isLoading ?? this.isLoading,
       volume: volume ?? this.volume,
+      brightness: brightness ?? this.brightness,
       state: state ?? this.state,
       percent: percent ?? this.percent,
       kbps: kbps ?? this.kbps,
@@ -161,6 +166,7 @@ class VideoPlayerValue {
         'isBuffering: $isBuffering, '
         'isLoading: $isLoading, '
         'volume: $volume, '
+        'brightness: $brightness, '
         'percent: $percent, '
         'kbps: $kbps, '
         'errorDescription: $errorDescription)';
@@ -272,6 +278,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     }
     _textureId = await _videoPlayerPlatform.create(dataSourceDescription);
     _creatingCompleter.complete(null);
+   
     final Completer<void> initializingCompleter = Completer<void>();
 
     void eventListener(VideoEvent event) {
@@ -328,6 +335,11 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         initializingCompleter.completeError(obj);
       }
     }
+
+    // 获取初始亮度
+    double brightness = await getBrightness();
+    print(brightness);
+    value = value.copyWith(brightness: brightness);
 
     _eventSubscription = _videoPlayerPlatform
         .videoEventsFor(_textureId)
@@ -399,6 +411,20 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       cancelTimer();
       await _videoPlayerPlatform.pause(_textureId);
     }
+  }
+
+  Future<void> _applyBrightness() async {
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    await _videoPlayerPlatform.setBrightness(_textureId, value.brightness);
+  }
+
+  Future<double> getBrightness() async {
+    if (_isDisposed) {
+      return 0;
+    }
+    return await _videoPlayerPlatform.getBrightness(_textureId);
   }
 
   Future<void> _applyVolume() async {
@@ -475,6 +501,11 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   Future<void> setVolume(double volume) async {
     value = value.copyWith(volume: volume.clamp(0.0, 1.0));
     await _applyVolume();
+  }
+
+  Future<void> setBrightness(double brightness) async {
+    value = value.copyWith(brightness: brightness.clamp(0.0, 1.0));
+    await _applyBrightness();
   }
 
   void _updatePosition(Duration position) {

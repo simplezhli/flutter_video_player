@@ -99,6 +99,14 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('setVolume() has not been implemented.');
   }
 
+  Future<void> setBrightness(int textureId, double volume) {
+    throw UnimplementedError('setBrightness() has not been implemented.');
+  }
+
+  Future<double> getBrightness(int textureId) {
+    throw UnimplementedError('getBrightness() has not been implemented.');
+  }
+
   /// Sets the video position to a [Duration] from the start.
   Future<void> seekTo(int textureId, Duration position) {
     throw UnimplementedError('seekTo() has not been implemented.');

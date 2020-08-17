@@ -77,6 +77,20 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
+  Future<void> setBrightness(int textureId, double volume) {
+    return _api.setBrightness(VolumeMessage()
+      ..textureId = textureId
+      ..volume = volume);
+  }
+
+  @override
+  Future<double> getBrightness(int textureId) async {
+    BrightnessMessage response =
+    await _api.getBrightness(TextureMessage()..textureId = textureId);
+    return response.screenBrightness;
+  }
+
+  @override
   Future<void> seekTo(int textureId, Duration position) {
     return _api.seekTo(PositionMessage()
       ..textureId = textureId
