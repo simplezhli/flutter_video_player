@@ -8,10 +8,7 @@
 /// video.
 
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
-import 'package:video_player_example/chewie/chewie_player.dart';
 import 'package:video_player_example/video_player_page.dart';
-import 'package:video_player_example/widget/deer_controls.dart';
 
 void main() {
   runApp(

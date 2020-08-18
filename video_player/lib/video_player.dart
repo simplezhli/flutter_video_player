@@ -29,7 +29,7 @@ class VideoPlayerValue {
     this.size,
     this.position = const Duration(),
     this.buffered = const <DurationRange>[],
-    this.isPlaying = true,
+    this.isPlaying = false,
     this.isLooping = false,
     this.isBuffering = false,
     this.isLoading = false,
@@ -305,7 +305,6 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           initializingCompleter.complete(null);
           _applyLooping();
           _applyVolume();
-          _applyPlayPause();
           break;
         case VideoEventType.completed:
           value = value.copyWith(isPlaying: false, position: value.duration, isLoading: false,);
@@ -522,6 +521,9 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   }
 
   Future<void> restoreBrightness() async {
+    if (value == null || value.initialBrightness == null) {
+      return;
+    }
     await setBrightness(value.initialBrightness);
   }
 }

@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_progress_colors.dart';
 import 'package:video_player_example/chewie/player_with_controls.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:connectivity/connectivity.dart';
 
 typedef Widget ChewieRoutePageBuilder(
     BuildContext context,
@@ -44,16 +45,21 @@ class Chewie extends StatefulWidget {
 
 class ChewieState extends State<Chewie> {
   bool _isFullScreen = false;
-
+  StreamSubscription<ConnectivityResult> _subscription;
+  
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(listener);
+    if (widget.controller.isCheckConnectivity) {
+      _subscription = Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
+    }
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(listener);
+    _subscription?.cancel();
     super.dispose();
   }
 
@@ -64,7 +70,21 @@ class ChewieState extends State<Chewie> {
     }
     super.didUpdateWidget(oldWidget);
   }
-
+  
+  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+    switch (result) {
+      case ConnectivityResult.wifi:
+        widget.controller.setNetState(true);
+        break;
+      case ConnectivityResult.mobile:
+      case ConnectivityResult.none:
+        widget.controller.setNetState(false);
+        break;
+      default:
+        break;
+    }
+  }
+  
   void listener() async {
     if (widget.controller.isFullScreen && !_isFullScreen) {
       _isFullScreen = true;
@@ -196,6 +216,7 @@ class ChewieController extends ChangeNotifier {
     this.allowedScreenSleep = true,
     this.allowFullScreen = true,
     this.allowMuting = true,
+    this.isCheckConnectivity = true,
     this.systemOverlaysAfterFullScreen = SystemUiOverlay.values,
     this.deviceOrientationsAfterFullScreen = const [
       DeviceOrientation.portraitUp,
@@ -268,6 +289,8 @@ class ChewieController extends ChangeNotifier {
   /// Defines if the mute control should be shown
   final bool allowMuting;
 
+  final bool isCheckConnectivity;
+
   /// Defines the system overlays visible after exiting fullscreen
   final List<SystemUiOverlay> systemOverlaysAfterFullScreen;
 
@@ -287,40 +310,95 @@ class ChewieController extends ChangeNotifier {
 
   bool get isFullScreen => _isFullScreen;
 
+  bool _isWifi;
+
+  bool get isWifi => _isWifi;
+
   bool get isPlaying => videoPlayerController.value.isPlaying;
 
-  Future _initialize() async {
-    await videoPlayerController.setLooping(looping);
+  final Connectivity _connectivity = Connectivity();
+  
+  // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> _initConnectivity() async {
+    ConnectivityResult result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      print(e.toString());
+    }
+    await setNetState(result == ConnectivityResult.wifi);
+  }
 
-    if ((autoInitialize || autoPlay) &&
-        !videoPlayerController.value.initialized) {
+  Future<void> _initialize() async {
+    await videoPlayerController.setLooping(looping);
+    /// 判断是否需要检测网络环境
+    if (isCheckConnectivity) {
+      /// 等待网络为wifi时初始化
+      _initConnectivity();
+    } else {
+      await _initPlayer();
+    }
+    
+    if (fullScreenByDefault) {
+      enterFullScreen();
+      videoPlayerController.addListener(_fullScreenListener);
+    }
+  }
+  
+  Future<void> _initPlayer() async {
+    if ((autoInitialize || autoPlay) && !videoPlayerController.value.initialized) {
       await videoPlayerController.initialize();
       if (initComplete != null) {
         initComplete();
       }
-    }
 
-    if (autoPlay) {
-      if (fullScreenByDefault) {
-        enterFullScreen();
+      if (autoPlay) {
+        await play();
       }
 
-      await videoPlayerController.play();
-    }
-
-    if (startAt != null) {
-      await videoPlayerController.seekTo(startAt);
-    }
-
-    if (fullScreenByDefault) {
-      videoPlayerController.addListener(_fullScreenListener);
+      if (startAt != null) {
+        await seekTo(startAt);
+      }
     }
   }
 
-  void _fullScreenListener() async {
-    if (videoPlayerController.value.isPlaying && !_isFullScreen) {
+  Future<void> _fullScreenListener() async {
+    if (isPlaying && !_isFullScreen) {
       enterFullScreen();
       videoPlayerController.removeListener(_fullScreenListener);
+    }
+  }
+
+  Future<void> setNetState(bool isWifi) async {
+    if (isWifi == _isWifi) {
+      // 避免重复操作
+      return;
+    }
+    _isWifi = isWifi;
+    notifyListeners();
+    if (isWifi) {
+      /// 如果为wifi，检查是否初始化。没有则初始化，有则直接播放。
+      if (!videoPlayerController.value.initialized) {
+        await videoPlayerController.initialize();
+        if (initComplete != null) {
+          initComplete();
+        }
+        
+        if (startAt != null) {
+          await seekTo(startAt);
+        }
+        
+        if (autoPlay) {
+          await play();
+        }
+        
+      } else {
+        await play();
+      }
+    } else {
+      /// 不为wifi则暂停播放 
+      await pause();
     }
   }
 

@@ -1,11 +1,13 @@
 
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_player.dart';
 import 'package:video_player_example/chewie/chewie_progress_colors.dart';
 import 'package:video_player_example/chewie/material_progress_bar.dart';
-import 'package:video_player_example/chewie/utils.dart';
+import 'package:video_player_example/widget/bottom_bar.dart';
 import 'package:video_player_example/widget/gesture_dialog.dart';
 import 'package:video_player_example/widget/seek_dialog.dart';
 import 'package:video_player_example/widget/tips_view.dart';
@@ -41,6 +43,11 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   double _currentVolume;
   double _currentBrightness;
 
+  /// 底部操作条显示时间倒计时
+  Timer _hideTimer;
+  /// 底部操作条是否显示
+  bool _hideStuff = true;
+  
   @override
   void initState() {
     if (animationController == null) {
@@ -56,6 +63,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   @override
   void dispose() {
     _dispose(controller);
+    _hideTimer?.cancel();
     animationController?.dispose();
     super.dispose();
   }
@@ -113,7 +121,12 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         ),
         Positioned(
           left: 0, right: 0, bottom: 0,
-          child: _buildBottomBar(),
+          child: BottomBar(
+            hideStuff: _hideStuff,
+            progress: animationController,
+            playPause: _playPause,
+            progressBar: _buildProgressBar(),
+          ),
         ),
         Positioned.fill(
           child: TipsView(
@@ -128,9 +141,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   Widget _buildGestureView() {
     Widget body;
     if (_progressBarDragging) {
-      body = SeekDialog(
-        child: _buildPosition(),
-      );
+      body = SeekDialog();
     }
     if (_volumeDragging) {
       body = GestureDialog(
@@ -149,60 +160,15 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
     );
   }
   
-  Widget _buildBottomBar() {
-    return Container(
-      height: 60.0,
-      padding: EdgeInsets.only(top: 20.0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.black.withOpacity(.3),
-            Colors.transparent,
-          ],
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          stops: [0, .9],
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: AnimatedIcon(
-              icon: AnimatedIcons.play_pause,
-              progress: animationController,
-              semanticLabel: 'Play/Pause',
-              size: 25.0,
-              color: Colors.white,
-            ),
-            onPressed: _playPause,
-          ),
-          Expanded(child: _buildProgressBar(),),
-          Padding(
-            padding: EdgeInsets.only(left: 15.0),
-            child: _buildPosition(),
-          ),
-          IconButton(
-            icon: Icon(
-              chewieController.isFullScreen
-                  ? Icons.fullscreen_exit
-                  : Icons.fullscreen,
-              color: Colors.white,
-              size: 25.0,
-            ),
-            onPressed: _onExpandCollapse,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildProgressBar() {
     return MaterialVideoProgressBar(controller,
       onDragStart: () {
         _progressBarDragging = true;
+        _hideTimer?.cancel();
       },
       onDragEnd: () {
         _progressBarDragging = false;
+        _startHideTimer();
       },
       colors: chewieController.materialProgressColors ??
           ChewieProgressColors(
@@ -214,40 +180,35 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildPosition() {
-    final position = _latestValue != null && _latestValue.position != null
-        ? _latestValue.position
-        : Duration.zero;
-    final duration = _latestValue != null && _latestValue.duration != null
-        ? _latestValue.duration
-        : Duration.zero;
+  void _cancelAndRestartTimer() {
+    _hideTimer?.cancel();
+    _startHideTimer();
 
-    return RichText(
-      text: TextSpan(
-        text: '${formatDuration(position)}',
-        children: [
-          TextSpan(
-            text: ' / ',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12.0,
-            ),
-          ),
-          TextSpan(
-            text: '${formatDuration(duration)}',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12.0,
-            ),
-          ),
-        ],
-        style: const TextStyle(color: Colors.white, fontSize: 12.0),
-      ),
-    );
+    setState(() {
+      _hideStuff = false;
+    });
   }
-  
+
+  void _startHideTimer() {
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      setState(() {
+        _hideStuff = true;
+      });
+    });
+  }
+
   Widget _buildGestureDetector() {
     return GestureDetector(
+      onTap: () {
+        if (_hideStuff) {
+          _cancelAndRestartTimer();
+        } else {
+          _hideTimer?.cancel();
+          setState(() {
+            _hideStuff = true;
+          });
+        }
+      },      
       onDoubleTap: _playPause,
       onHorizontalDragStart: (DragStartDetails details) {
         if (!_latestValue.initialized) {
@@ -299,7 +260,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         }
         final offsetDifference = _initialOffset.dy - details.globalPosition.dy;
         final RenderBox box = context.findRenderObject() as RenderBox;
-        final double relative = offsetDifference * 1.2 / box.size.height;
+        final double relative = offsetDifference * 1.8 / box.size.height;
         double brightness = double.parse((relative + _currentBrightness).clamp(0, 1).toStringAsFixed(2));
         double volume = double.parse((relative + _currentVolume).clamp(0, 1).toStringAsFixed(1));
         if (volume != controller.value.volume && _volumeDragging) {
@@ -390,7 +351,4 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
     }
   }
 
-  void _onExpandCollapse() {
-    chewieController.toggleFullScreen();
-  }
 }

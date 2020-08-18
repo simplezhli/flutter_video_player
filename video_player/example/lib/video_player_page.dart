@@ -22,15 +22,15 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void initState() {
     super.initState();
     _videoPlayerController1 = VideoPlayerController.network(
-        'http://vfx.mtime.cn/Video/2019/03/19/mp4/190319104618910544.mp4');
+        'http://vfx.mtime.cn/Video/2019/03/09/mp4/190309153658147087.mp4');
     _videoPlayerController2 = VideoPlayerController.network(
-        'http://vfx.mtime.cn/Video/2019/03/13/mp4/190313094901111138.mp4');
+        'http://vfx.mtime.cn/Video/2019/03/12/mp4/190312083533415853.mp4');
     _chewieController = ChewieController(
       allowedScreenSleep: false,
       customControls: DeerControls(),
       videoPlayerController: _videoPlayerController1,
       autoInitialize: true,
-      autoPlay: true,
+      autoPlay: true, // 自动播放
       looping: false,
       initComplete: () {
         setState(() {
@@ -80,7 +80,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     setState(() {
                       _chewieController.dispose();
                       _videoPlayerController2.pause();
-                      _videoPlayerController2.seekTo(Duration(seconds: 0));
+                      /// 指定播放位置
+                      _videoPlayerController2.seekTo(Duration(seconds: 5));
                       _chewieController = ChewieController(
                         customControls: DeerControls(),
                         videoPlayerController: _videoPlayerController1,
@@ -112,8 +113,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                         customControls: DeerControls(),
                         videoPlayerController: _videoPlayerController2,
                         autoInitialize: true,
-                        autoPlay: false,
-                        looping: false,
+                        autoPlay: false, // 不自动播放
+                        looping: true, // 循环播放
                         initComplete: () {
                           setState(() {
 
