@@ -126,6 +126,40 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         Positioned.fill(
           child: _buildGestureDetector(),
         ),
+        if (chewieController.isFullScreen)
+          Positioned(
+            left: 0, right: 0, top: 0,
+            child: AnimatedOpacity(
+              duration: Duration(milliseconds: 300),
+              opacity: _hideStuff ? 0.0 : 1.0,
+              child: Container(
+                height: 60.0,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withOpacity(.3),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0, .9],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    BackButton(color: Colors.white,),
+                    Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.more_horiz, color: Colors.white,),
+                      onPressed: () {
+                        Scaffold.of(context).openEndDrawer();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         Positioned(
           left: 0, right: 0, bottom: 0,
           child: BottomBar(

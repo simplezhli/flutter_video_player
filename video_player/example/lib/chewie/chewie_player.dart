@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_progress_colors.dart';
 import 'package:video_player_example/chewie/player_with_controls.dart';
+import 'package:video_player_example/widget/drawer.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:connectivity/connectivity.dart';
 
@@ -108,11 +109,8 @@ class ChewieState extends State<Chewie> {
       _ChewieControllerProvider controllerProvider) {
     return Scaffold(
       resizeToAvoidBottomPadding: false,
-      body: Container(
-        alignment: Alignment.center,
-        color: Colors.black,
-        child: controllerProvider,
-      ),
+      endDrawer: MyDrawer(controller: widget.controller,),
+      body: controllerProvider,
     );
   }
 

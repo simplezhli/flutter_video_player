@@ -94,6 +94,30 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('pause() has not been implemented.');
   }
 
+  Future<void> reload(int textureId) {
+    throw UnimplementedError('reload() has not been implemented.');
+  }
+
+  Future<void> stop(int textureId) {
+    throw UnimplementedError('stop() has not been implemented.');
+  }
+
+  Future<void> setSpeed(int textureId, double volume) {
+    throw UnimplementedError('setSpeed() has not been implemented.');
+  }
+
+  Future<void> setScaleMode(int textureId, int value) {
+    throw UnimplementedError('setScaleMode() has not been implemented.');
+  }
+
+  Future<void> setMirrorMode(int textureId, int value) {
+    throw UnimplementedError('setMirrorMode() has not been implemented.');
+  }
+
+  Future<void> selectTrack(int textureId, int value) {
+    throw UnimplementedError('selectTrack() has not been implemented.');
+  }
+  
   /// Sets the volume to a range between 0.0 and 1.0.
   Future<void> setVolume(int textureId, double volume) {
     throw UnimplementedError('setVolume() has not been implemented.');

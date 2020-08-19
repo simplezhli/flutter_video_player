@@ -30,6 +30,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       customControls: DeerControls(),
       videoPlayerController: _videoPlayerController1,
       autoInitialize: true,
+      aspectRatio: 1000 / 562,
       autoPlay: true, // 自动播放
       looping: false,
     );

@@ -154,6 +154,11 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi, Activit
     player.setVolume(arg.getVolume());
   }
 
+  public void setSpeed(VolumeMessage arg) {
+    VideoPlayer player = videoPlayers.get(arg.getTextureId());
+    player.setSpeed(arg.getVolume());
+  }
+  
   public void setBrightness(VolumeMessage arg) {
     float brightness = Float.parseFloat(arg.getVolume().toString());
     Window window = flutterState.activity.getWindow();
@@ -197,6 +202,34 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi, Activit
   public void play(TextureMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.play();
+  }
+
+  public void stop(TextureMessage arg) {
+    VideoPlayer player = videoPlayers.get(arg.getTextureId());
+    player.stop();
+  }
+
+  public void reload(TextureMessage arg) {
+    VideoPlayer player = videoPlayers.get(arg.getTextureId());
+    player.reload();
+  }
+
+  @Override
+  public void setScaleMode(PositionMessage arg) {
+    VideoPlayer player = videoPlayers.get(arg.getTextureId());
+    player.setScaleMode(arg.getPosition().intValue());
+  }
+
+  @Override
+  public void setMirrorMode(PositionMessage arg) {
+    VideoPlayer player = videoPlayers.get(arg.getTextureId());
+    player.setMirrorMode(arg.getPosition().intValue());
+  }
+
+  @Override
+  public void selectTrack(PositionMessage arg) {
+    VideoPlayer player = videoPlayers.get(arg.getTextureId());
+    player.selectTrack(arg.getPosition().intValue());
   }
 
   public PositionMessage position(TextureMessage arg) {

@@ -70,6 +70,44 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
+  Future<void> stop(int textureId) {
+    return _api.stop(TextureMessage()..textureId = textureId);
+  }
+
+  @override
+  Future<void> reload(int textureId) {
+    return _api.reload(TextureMessage()..textureId = textureId);
+  }
+
+  @override
+  Future<void> setSpeed(int textureId, double volume) {
+    return _api.setSpeed(VolumeMessage()
+      ..textureId = textureId
+      ..volume = volume);
+  }
+
+  @override
+  Future<void> setScaleMode(int textureId, int value) {
+    return _api.setScaleMode(PositionMessage()
+      ..textureId = textureId
+      ..position = value);
+  }
+
+  @override
+  Future<void> setMirrorMode(int textureId, int value) {
+    return _api.setMirrorMode(PositionMessage()
+      ..textureId = textureId
+      ..position = value);
+  }
+
+  @override
+  Future<void> selectTrack(int textureId, int value) {
+    return _api.selectTrack(PositionMessage()
+      ..textureId = textureId
+      ..position = value);
+  }
+  
+  @override
   Future<void> setVolume(int textureId, double volume) {
     return _api.setVolume(VolumeMessage()
       ..textureId = textureId

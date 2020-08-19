@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -15,36 +14,45 @@ class PlayerWithControls extends StatefulWidget {
 class _PlayerWithControlsState extends State<PlayerWithControls> {
 
   ChewieController _chewieController;
+  int scaleMode;
   double aspectRatio;
-  
+  VideoPlayerController controller;
+
+  @override
+  void dispose() {
+    _dispose(controller);
+    super.dispose();
+  }
+
+  void _dispose(VideoPlayerController controller) {
+    controller?.removeListener(_refresh);
+  }
+
   @override
   void didChangeDependencies() {
-    ChewieController chewieController = ChewieController.of(context);
-    if (chewieController != _chewieController) {
-      _chewieController = chewieController;
-      _chewieController.addListener(_refresh);
+    final _oldController = _chewieController;
+    _chewieController = ChewieController.of(context);
+    controller = _chewieController.videoPlayerController;
+
+    if (_oldController != _chewieController) {
+      _dispose(_oldController?.videoPlayerController);
+      controller?.addListener(_refresh);
     }
+
     super.didChangeDependencies();
   }
   
   void _refresh() {
-    /// 视频比例变化时刷新
-    if (_chewieController.aspectRatio == null) {
-      if (aspectRatio != _chewieController.videoPlayerController.value.aspectRatio) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          
-        });
+    /// 视频尺寸变化时刷新
+    if (scaleMode != _chewieController.videoPlayerController.value.scaleMode) {
+      scaleMode = _chewieController.videoPlayerController.value.scaleMode;
+      if (!mounted) {
+        return;
       }
-    }
-  }
+      setState(() {
 
-  @override
-  void dispose() {
-    _chewieController?.removeListener(_refresh);
-    super.dispose();
+      });
+    }
   }
   
   @override
@@ -53,13 +61,16 @@ class _PlayerWithControlsState extends State<PlayerWithControls> {
     if (_chewieController.aspectRatio == null) {
       aspectRatio = _chewieController.videoPlayerController.value.aspectRatio;
     } else {
-      aspectRatio = min(_chewieController.aspectRatio, _chewieController.videoPlayerController.value.aspectRatio);
+      aspectRatio = _chewieController.aspectRatio;
     }
+
+    aspectRatio = _chewieController.isFullScreen ? _calculateAspectRatio(context) : aspectRatio;
+    
     return Center(
       child: Container(
         color: Colors.black,
         child: AspectRatio(
-          aspectRatio: _chewieController.isFullScreen ? _calculateAspectRatio(context) : aspectRatio,
+          aspectRatio: aspectRatio,
           child: _buildPlayerWithControls(_chewieController, context),
         ),
       ),
@@ -87,13 +98,14 @@ class _PlayerWithControlsState extends State<PlayerWithControls> {
 
   Container _buildPlayerWithControls(
       ChewieController chewieController, BuildContext context) {
+    print(chewieController.videoPlayerController.value.mirrorMode);
     return Container(
       child: Stack(
         children: <Widget>[
           chewieController.placeholder ?? const SizedBox.shrink(),
           Center(
             child: AspectRatio(
-              aspectRatio: chewieController.videoPlayerController.value.aspectRatio,
+              aspectRatio: chewieController.videoPlayerController.value.scaleMode != 0 ? aspectRatio : chewieController.videoPlayerController.value.aspectRatio,
               child: VideoPlayer(chewieController.videoPlayerController),
             ),
           ),

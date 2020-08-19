@@ -52,9 +52,15 @@ NS_ASSUME_NONNULL_BEGIN
 -(void)setLooping:(FLTLoopingMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)setVolume:(FLTVolumeMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)setBrightness:(FLTVolumeMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)setSpeed:(FLTVolumeMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(nullable FLTBrightnessMessage *)getBrightness:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)play:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)prepare:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)stop:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)reload:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)setScaleMode:(FLTPositionMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)setMirrorMode:(FLTPositionMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)selectTrack:(FLTPositionMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(nullable FLTPositionMessage *)position:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)seekTo:(FLTPositionMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)pause:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;

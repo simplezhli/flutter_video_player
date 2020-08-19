@@ -35,6 +35,9 @@ class VideoPlayerValue {
     this.isLoading = false,
     this.state = VideoState.idle,
     this.volume = 1.0,
+    this.speed = 1.0,
+    this.scaleMode = 0,
+    this.mirrorMode = 0,
     this.brightness,
     this.initialBrightness,
     this.percent = 0,
@@ -80,6 +83,13 @@ class VideoPlayerValue {
   /// The current volume of the playback.
   final double volume;
 
+  /// 当前视频播放倍速
+  final double speed;
+  /// 1：填充， 2：拉伸， 0：适应
+  final int scaleMode;
+  /// 1：水平镜像， 2：垂直镜像， 0：无镜像
+  final int mirrorMode;
+  
   /// 当前页面亮度
   final double brightness;
 
@@ -137,6 +147,9 @@ class VideoPlayerValue {
     bool isBuffering,
     bool isLoading,
     double volume,
+    double speed,
+    int scaleMode,
+    int mirrorMode,
     double brightness,
     double initialBrightness,
     VideoState state,
@@ -154,6 +167,9 @@ class VideoPlayerValue {
       isBuffering: isBuffering ?? this.isBuffering,
       isLoading: isLoading ?? this.isLoading,
       volume: volume ?? this.volume,
+      speed: speed ?? this.speed,
+      scaleMode: scaleMode ?? this.scaleMode,
+      mirrorMode: mirrorMode ?? this.mirrorMode,
       brightness: brightness ?? this.brightness,
       initialBrightness: initialBrightness ?? this.initialBrightness,
       state: state ?? this.state,
@@ -338,7 +354,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
     void errorListener(Object obj) {
       final PlatformException e = obj;
-      value = VideoPlayerValue.erroneous(e.message);
+      value = VideoPlayerValue.erroneous(e.message + '(${e.code})');
       cancelTimer();
       if (!initializingCompleter.isCompleted) {
         initializingCompleter.completeError(obj);
@@ -401,6 +417,55 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _applyPlayPause();
   }
 
+  Future<void> setSpeed(double speed) async {
+    value = value.copyWith(speed: speed.clamp(0.5, 2.0));
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    await _videoPlayerPlatform.setSpeed(_textureId, value.speed);
+  }
+
+  Future<void> stop() async {
+    value = value.copyWith(isPlaying: false, isLoading: false,);
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    cancelTimer();
+    await _videoPlayerPlatform.stop(_textureId);
+  }
+
+  Future<void> reload() async {
+    value = value.copyWith(isPlaying: true, isLoading: true,);
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    cancelTimer();
+    await _videoPlayerPlatform.reload(_textureId);
+  }
+
+  Future<void> setScaleMode(int scaleMode) async {
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    value = value.copyWith(scaleMode: scaleMode,);
+    await _videoPlayerPlatform.setScaleMode(_textureId, scaleMode);
+  }
+
+  Future<void> setMirrorMode(int mirrorMode) async {
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    value = value.copyWith(mirrorMode: mirrorMode,);
+    await _videoPlayerPlatform.setMirrorMode(_textureId, mirrorMode);
+  }
+
+  Future<void> selectTrack(int track) async {
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    await _videoPlayerPlatform.selectTrack(_textureId, track);
+  }
+  
   Future<void> _applyLooping() async {
     if (!value.initialized || _isDisposed) {
       return;

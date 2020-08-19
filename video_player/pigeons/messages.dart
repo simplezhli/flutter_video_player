@@ -39,9 +39,15 @@ abstract class VideoPlayerApi {
   void setLooping(LoopingMessage msg);
   void setVolume(VolumeMessage msg);
   void setBrightness(VolumeMessage msg);
+  void setSpeed(VolumeMessage msg);
   BrightnessMessage getBrightness(TextureMessage msg);
   void play(TextureMessage msg);
   void prepare(TextureMessage msg);
+  void stop(TextureMessage msg);
+  void reload(TextureMessage msg);
+  void setScaleMode(PositionMessage msg);
+  void setMirrorMode(PositionMessage msg);
+  void selectTrack(PositionMessage msg);
   PositionMessage position(TextureMessage msg);
   void seekTo(PositionMessage msg);
   void pause(TextureMessage msg);

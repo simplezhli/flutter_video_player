@@ -12,6 +12,9 @@ import com.aliyun.player.bean.ErrorCode;
 import com.aliyun.player.bean.ErrorInfo;
 import com.aliyun.player.bean.InfoBean;
 import com.aliyun.player.bean.InfoCode;
+import com.aliyun.player.nativeclass.MediaInfo;
+import com.aliyun.player.nativeclass.PlayerConfig;
+import com.aliyun.player.nativeclass.TrackInfo;
 import com.aliyun.player.source.UrlSource;
 
 import java.util.Arrays;
@@ -20,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.flutter.Log;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.view.TextureRegistry;
 
@@ -54,11 +58,15 @@ final class VideoPlayer {
     mVideoBufferedPosition = 0;
     aliyunVodPlayer = AliPlayerFactory.createAliPlayer(context.getApplicationContext());
     
-//    //设置播放器参数
-//    PlayerConfig config = aliyunVodPlayer.getConfig();
-//    //停止之后清空画面。防止画面残留（建议设置）
-//    config.mClearFrameWhenStop = true;
-//    aliyunVodPlayer.setConfig(config);
+    //设置播放器参数
+    PlayerConfig config = aliyunVodPlayer.getConfig();
+    //停止之后清空画面。防止画面残留（建议设置）
+    config.mClearFrameWhenStop = true;
+    config.mNetworkTimeout = 10000;
+    config.mNetworkRetryCount = 2;
+    //高缓冲时长。单位ms。当网络不好导致加载数据时，如果加载的缓冲时长到达这个值，结束加载状态。
+    config.mHighBufferDuration = 1000;
+    aliyunVodPlayer.setConfig(config);
 
     Uri uri = Uri.parse(dataSource);
 
@@ -88,10 +96,10 @@ final class VideoPlayer {
     SurfaceTexture surfaceTexture = textureEntry.surfaceTexture();
     surface = new Surface(surfaceTexture);
     aliyunVodPlayer.setSurface(surface);
-    
     aliyunVodPlayer.setOnVideoSizeChangedListener(new IPlayer.OnVideoSizeChangedListener() {
       @Override
       public void onVideoSizeChanged(int width, int height) {
+        Log.d("java:", "-----------" + width + "----------" + height);
         textureEntry.surfaceTexture().setDefaultBufferSize(width, height);
         // 视频宽高变化通知
         if (aliyunVodPlayer == null) {
@@ -185,6 +193,8 @@ final class VideoPlayer {
         } else if (infoBean.getCode() == InfoCode.CurrentPosition) {
           //更新currentPosition
           mCurrentPosition = infoBean.getExtraValue();
+        } else if (infoBean.getCode() == InfoCode.NetworkRetry) {
+          eventSink.error(infoBean.getCode() + "", "加载超时", infoBean.getExtraMsg());
         }
       }
     });
@@ -220,11 +230,80 @@ final class VideoPlayer {
     aliyunVodPlayer.pause();
   }
 
+  void stop() {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
+    aliyunVodPlayer.stop();
+  }
+
+  void reload() {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
+    aliyunVodPlayer.reload();
+  }
+
   void setLooping(boolean value) {
     if (aliyunVodPlayer == null) {
       return;
     }
     aliyunVodPlayer.setLoop(value);
+  }
+  
+  //设置倍速播放:支持0.5~2倍速的播放
+  void setSpeed(double value) {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
+    float bracketedValue = (float) Math.max(0.5, Math.min(2.0, value));
+    aliyunVodPlayer.setSpeed(bracketedValue);;
+  }
+
+  void setScaleMode(int value) {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
+    
+    IPlayer.ScaleMode scaleMode;
+    if (value == 1) {
+      // 填充（将按照视频宽高比等比放大，充满view，不会有画面变形）
+      scaleMode = IPlayer.ScaleMode.SCALE_ASPECT_FILL;
+    } else if (value == 2) {
+      // 拉伸（如果视频宽高比例与view比例不一致，会导致画面变形）
+      scaleMode = IPlayer.ScaleMode.SCALE_TO_FILL;
+    } else {
+      // 宽高比适应（将按照视频宽高比等比缩小到view内部，不会有画面变形）
+      scaleMode = IPlayer.ScaleMode.SCALE_ASPECT_FIT;
+    }
+    aliyunVodPlayer.setScaleMode(scaleMode);
+  }
+
+  void setMirrorMode(int value) {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
+
+    IPlayer.MirrorMode mirrorMode;
+    if (value == 1) {
+      // 水平镜像
+      mirrorMode = IPlayer.MirrorMode.MIRROR_MODE_HORIZONTAL;
+    } else if (value == 2) {
+      // 垂直镜像
+      mirrorMode = IPlayer.MirrorMode.MIRROR_MODE_VERTICAL;
+    } else {
+      // 无镜像
+      mirrorMode = IPlayer.MirrorMode.MIRROR_MODE_NONE;
+    }
+    
+    aliyunVodPlayer.setMirrorMode(mirrorMode);
+  }
+
+  void selectTrack(int value) {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
+    aliyunVodPlayer.selectTrack(value);
   }
 
   void setVolume(double value) {
@@ -250,6 +329,19 @@ final class VideoPlayer {
   private void sendInitialized() {
     if (isInitialized) {
       Map<String, Object> event = new HashMap<>();
+      MediaInfo mediaInfo = aliyunVodPlayer.getMediaInfo();
+      if (mediaInfo != null) {
+        List<TrackInfo> trackInfos  = mediaInfo.getTrackInfos();
+        for (TrackInfo info : trackInfos) {
+          if (info.getType() == TrackInfo.Type.TYPE_VOD) {
+            /// 清晰度
+            // TODO 暂时未实现
+            Log.d("java:", "-----------" + info.getVodDefinition());
+            int index = info.getIndex();
+          }
+        }
+      }
+     
       event.put("event", "initialized");
       event.put("duration", aliyunVodPlayer.getDuration());
 
