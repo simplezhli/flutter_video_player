@@ -5,24 +5,62 @@ import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_player.dart';
 import 'package:video_player_example/chewie/material_controls.dart';
 
-class PlayerWithControls extends StatelessWidget {
+class PlayerWithControls extends StatefulWidget {
   PlayerWithControls({Key key}) : super(key: key);
 
   @override
+  _PlayerWithControlsState createState() => _PlayerWithControlsState();
+}
+
+class _PlayerWithControlsState extends State<PlayerWithControls> {
+
+  ChewieController _chewieController;
+  double aspectRatio;
+  
+  @override
+  void didChangeDependencies() {
+    ChewieController chewieController = ChewieController.of(context);
+    if (chewieController != _chewieController) {
+      _chewieController = chewieController;
+      _chewieController.addListener(_refresh);
+    }
+    super.didChangeDependencies();
+  }
+  
+  void _refresh() {
+    /// 视频比例变化时刷新
+    if (_chewieController.aspectRatio == null) {
+      if (aspectRatio != _chewieController.videoPlayerController.value.aspectRatio) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _chewieController?.removeListener(_refresh);
+    super.dispose();
+  }
+  
+  @override
   Widget build(BuildContext context) {
-    final ChewieController chewieController = ChewieController.of(context);
-    double aspectRatio;
-    if (chewieController.aspectRatio == null) {
-      aspectRatio = chewieController.videoPlayerController.value.aspectRatio;
+   
+    if (_chewieController.aspectRatio == null) {
+      aspectRatio = _chewieController.videoPlayerController.value.aspectRatio;
     } else {
-      aspectRatio = min(chewieController.aspectRatio, chewieController.videoPlayerController.value.aspectRatio);
+      aspectRatio = min(_chewieController.aspectRatio, _chewieController.videoPlayerController.value.aspectRatio);
     }
     return Center(
       child: Container(
         color: Colors.black,
         child: AspectRatio(
-          aspectRatio: chewieController.isFullScreen ? _calculateAspectRatio(context) : aspectRatio,
-          child: _buildPlayerWithControls(chewieController, context),
+          aspectRatio: _chewieController.isFullScreen ? _calculateAspectRatio(context) : aspectRatio,
+          child: _buildPlayerWithControls(_chewieController, context),
         ),
       ),
     );
@@ -65,5 +103,4 @@ class PlayerWithControls extends StatelessWidget {
       ),
     );
   }
-
 }

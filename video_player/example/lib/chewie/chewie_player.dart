@@ -74,13 +74,12 @@ class ChewieState extends State<Chewie> {
   Future<void> _updateConnectionStatus(ConnectivityResult result) async {
     switch (result) {
       case ConnectivityResult.wifi:
-        widget.controller.setNetState(true);
-        break;
       case ConnectivityResult.mobile:
       case ConnectivityResult.none:
-        widget.controller.setNetState(false);
+        widget.controller.setNetState(result);
         break;
       default:
+        widget.controller.setNetState(ConnectivityResult.none);
         break;
     }
   }
@@ -223,14 +222,11 @@ class ChewieController extends ChangeNotifier {
       DeviceOrientation.portraitDown,
     ],
     this.routePageBuilder,
-    this.initComplete,
   }) : assert(videoPlayerController != null,
   'You must provide a controller to play a video') {
     _initialize();
   }
   
-  final void Function() initComplete;
-
   /// The controller for the video you want to play
   final VideoPlayerController videoPlayerController;
 
@@ -314,6 +310,10 @@ class ChewieController extends ChangeNotifier {
 
   bool get isWifi => _isWifi;
 
+  ConnectivityResult _netState = ConnectivityResult.none;
+
+  ConnectivityResult get netState => _netState;
+
   bool get isPlaying => videoPlayerController.value.isPlaying;
 
   final Connectivity _connectivity = Connectivity();
@@ -327,7 +327,7 @@ class ChewieController extends ChangeNotifier {
     } on PlatformException catch (e) {
       print(e.toString());
     }
-    await setNetState(result == ConnectivityResult.wifi);
+    await setNetState(result);
   }
 
   Future<void> _initialize() async {
@@ -349,9 +349,8 @@ class ChewieController extends ChangeNotifier {
   Future<void> _initPlayer() async {
     if ((autoInitialize || autoPlay) && !videoPlayerController.value.initialized) {
       await videoPlayerController.initialize();
-      if (initComplete != null) {
-        initComplete();
-      }
+      
+      notifyListeners();
 
       if (autoPlay) {
         await play();
@@ -370,9 +369,12 @@ class ChewieController extends ChangeNotifier {
     }
   }
 
-  Future<void> setNetState(bool isWifi) async {
+  Future<void> setNetState(ConnectivityResult result, {bool isAutoPlay = false}) async {
+    _netState = result;
+    bool isWifi = result == ConnectivityResult.wifi;
     if (isWifi == _isWifi) {
       // 避免重复操作
+      notifyListeners();
       return;
     }
     _isWifi = isWifi;
@@ -381,10 +383,8 @@ class ChewieController extends ChangeNotifier {
       /// 如果为wifi，检查是否初始化。没有则初始化，有则直接播放。
       if (!videoPlayerController.value.initialized) {
         await videoPlayerController.initialize();
-        if (initComplete != null) {
-          initComplete();
-        }
-        
+        /// 触发视频比例刷新
+        notifyListeners();
         if (startAt != null) {
           await seekTo(startAt);
         }
@@ -394,7 +394,9 @@ class ChewieController extends ChangeNotifier {
         }
         
       } else {
-        await play();
+        if (isAutoPlay || autoPlay) {
+          await play();
+        }
       }
     } else {
       /// 不为wifi则暂停播放 
@@ -414,6 +416,10 @@ class ChewieController extends ChangeNotifier {
 
   void toggleFullScreen() {
     _isFullScreen = !_isFullScreen;
+    notifyListeners();
+  }
+  
+  void refresh() {
     notifyListeners();
   }
 

@@ -365,8 +365,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         await _eventSubscription?.cancel();
         await _videoPlayerPlatform.dispose(_textureId);
       }
-      _lifeCycleObserver.dispose();
     }
+    _lifeCycleObserver?.dispose();
     _isDisposed = true;
     super.dispose();
   }
@@ -459,6 +459,10 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     if (!value.initialized || _isDisposed) {
       return;
     }
+    if (position == null) {
+      position = const Duration();
+    }
+    
     if (position > value.duration) {
       position = value.duration;
     } else if (position < const Duration()) {
@@ -472,6 +476,9 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   void updatePosition(Duration position) {
     if (!value.initialized || _isDisposed) {
       return;
+    }
+    if (position == null) {
+      position = const Duration();
     }
     if (position > value.duration) {
       position = value.duration;

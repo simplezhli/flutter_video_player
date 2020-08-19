@@ -32,11 +32,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       autoInitialize: true,
       autoPlay: true, // 自动播放
       looping: false,
-      initComplete: () {
-        setState(() {
-
-        });
-      },
     );
     Wakelock.enable();
   }
@@ -44,8 +39,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   @override
   void dispose() {
     
-    _videoPlayerController1?.restoreBrightness();
-    _videoPlayerController2?.restoreBrightness();
+    _videoPlayerController1.restoreBrightness();
+    _videoPlayerController2.restoreBrightness();
     _videoPlayerController1.dispose();
     _videoPlayerController2.dispose();
     _chewieController.dispose();
@@ -80,19 +75,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     setState(() {
                       _chewieController.dispose();
                       _videoPlayerController2.pause();
-                      /// 指定播放位置
-                      _videoPlayerController2.seekTo(Duration(seconds: 5));
                       _chewieController = ChewieController(
                         customControls: DeerControls(),
                         videoPlayerController: _videoPlayerController1,
                         autoInitialize: true,
                         autoPlay: false,
                         looping: false,
-                        initComplete: () {
-                          setState(() {
-
-                          });
-                        },
                       );
                     });
                   },
@@ -108,18 +96,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     setState(() {
                       _chewieController.dispose();
                       _videoPlayerController1.pause();
-                      _videoPlayerController1.seekTo(Duration(seconds: 0));
                       _chewieController = ChewieController(
+                        showControlsOnInitialize: true,
                         customControls: DeerControls(),
+                        startAt: Duration(seconds: 5), // 指定播放位置
                         videoPlayerController: _videoPlayerController2,
                         autoInitialize: true,
                         autoPlay: false, // 不自动播放
                         looping: true, // 循环播放
-                        initComplete: () {
-                          setState(() {
-
-                          });
-                        },
                       );
                     });
                   },

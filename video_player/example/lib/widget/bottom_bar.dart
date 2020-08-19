@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_player.dart';
+import 'package:video_player_example/chewie/chewie_progress_colors.dart';
+import 'package:video_player_example/chewie/material_progress_bar.dart';
 import 'package:video_player_example/chewie/utils.dart';
 
 class BottomBar extends StatefulWidget {
@@ -9,18 +11,21 @@ class BottomBar extends StatefulWidget {
   const BottomBar({
     Key key,
     @required this.playPause,
-    @required this.progressBar,
     @required this.progress,
     this.progressBarColor,
     this.hideStuff,
+    this.onDragEnd,
+    this.onDragStart,
+    this.onDragUpdate,
   }) : super(key: key);
 
   final VoidCallback playPause;
-  final Widget progressBar;
   final Animation<double> progress;
   final Color progressBarColor;
   final bool hideStuff;
-
+  final Function() onDragStart;
+  final Function() onDragEnd;
+  final Function() onDragUpdate;
 
   @override
   _BottomBarState createState() => _BottomBarState();
@@ -33,16 +38,38 @@ class _BottomBarState extends State<BottomBar> {
   VideoPlayerValue _latestValue;
   
   @override
+  void dispose() {
+    _dispose(controller);
+    super.dispose();
+  }
+
+  void _dispose(VideoPlayerController controller) {
+    controller?.removeListener(_updateState);
+  }
+
+  @override
   void didChangeDependencies() {
+    final _oldController = chewieController;
     chewieController = ChewieController.of(context);
     controller = chewieController.videoPlayerController;
+
+    if (_oldController != chewieController) {
+      _dispose(_oldController?.videoPlayerController);
+      controller?.addListener(_updateState);
+      _updateState();
+    }
+
     super.didChangeDependencies();
+  }
+
+  void _updateState() {
+    setState(() {
+      _latestValue = controller.value;
+    });
   }
   
   @override
   Widget build(BuildContext context) {
-    _latestValue = controller?.value;
-  
     /// 隐藏时忽略各种指针事件
     return IgnorePointer(
       ignoring: widget.hideStuff,
@@ -77,7 +104,7 @@ class _BottomBarState extends State<BottomBar> {
                     ),
                     onPressed: widget.playPause,
                   ),
-                  Expanded(child: widget.progressBar,),
+                  Expanded(child: _buildProgressBar(),),
                   Padding(
                     padding: EdgeInsets.only(left: 15.0),
                     child: _buildPosition(),
@@ -115,6 +142,21 @@ class _BottomBarState extends State<BottomBar> {
 
   void _onExpandCollapse() {
     chewieController.toggleFullScreen();
+  }
+
+  Widget _buildProgressBar() {
+    return MaterialVideoProgressBar(controller,
+      onDragStart: widget.onDragStart,
+      onDragUpdate: widget.onDragUpdate,
+      onDragEnd:  widget.onDragEnd,
+      colors: chewieController.materialProgressColors ??
+          ChewieProgressColors(
+            playedColor: Theme.of(context).accentColor,
+            handleColor: Theme.of(context).accentColor,
+            bufferedColor: Colors.white.withOpacity(.5),
+            backgroundColor: Colors.white.withOpacity(.3),
+          ),
+    );
   }
 
   Widget _buildPosition() {

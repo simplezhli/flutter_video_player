@@ -1,4 +1,5 @@
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_player.dart';
@@ -26,18 +27,55 @@ class _TipsViewState extends State<TipsView> {
   VideoPlayerValue _latestValue;
   ///  用于恢复之前播放位置
   Duration _latestPosition;
-  
+
+  ConnectivityResult _netState = ConnectivityResult.none;
   @override
   void didChangeDependencies() {
-    _chewieController = ChewieController.of(context);
-    _controller = _chewieController.videoPlayerController;
+    ChewieController chewieController = ChewieController.of(context);
+    if (chewieController != _chewieController) {
+      _chewieController = chewieController;
+      _controller = _chewieController.videoPlayerController;
+      _chewieController.addListener(_refresh);
+      _controller?.addListener(_updateState);
+      _updateState();
+    }
     super.didChangeDependencies();
   }
-  
+
+  /// 检测网络变化，刷新提示
+  void _refresh() {
+    if (_chewieController.netState != _netState) {
+      _netState = _chewieController.netState;
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+
+      });
+    }
+  }
+
+  void _updateState() {
+    setState(() {
+      _latestValue = _controller?.value;
+    });
+  }
+
+  @override
+  void dispose() {
+    _chewieController?.removeListener(_refresh);
+    _dispose(_controller);
+    super.dispose();
+  }
+
+  void _dispose(VideoPlayerController controller) {
+    controller?.removeListener(_updateState);
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget body;
-    _latestValue = _controller?.value;
+    
     if (_latestValue == null) {
       return const SizedBox.shrink();
     }
@@ -135,13 +173,18 @@ class _TipsViewState extends State<TipsView> {
   Widget _buildNetChangeView() {
     if (_chewieController.isCheckConnectivity && 
         _chewieController.isWifi != null && !_chewieController.isWifi) {
+      
+      bool isNet = _chewieController.netState != ConnectivityResult.none;
+      
       return Container(
         color: Colors.black,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('当前为非Wi-Fi，是否继续播放？', style: TextStyle(color: Colors.white, fontSize: 14.0),),
+              Text(isNet ? '当前为非Wi-Fi，是否继续播放？' : '网络已断开，请检查你的网络！',
+                style: const TextStyle(color: Colors.white, fontSize: 14.0),
+              ),
               SizedBox(height: 10,),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -150,7 +193,7 @@ class _TipsViewState extends State<TipsView> {
                     borderSide: const BorderSide(color: Colors.white),
                     child: const Text('继续播放', style: const TextStyle(color: Colors.white, fontSize: 14.0),),
                     onPressed: () {
-                      _chewieController.setNetState(true);
+                      _chewieController.setNetState(ConnectivityResult.wifi, isAutoPlay: true);
                     },
                   ),
                   const SizedBox(width: 40,),

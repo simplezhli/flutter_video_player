@@ -5,8 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_player.dart';
-import 'package:video_player_example/chewie/chewie_progress_colors.dart';
-import 'package:video_player_example/chewie/material_progress_bar.dart';
 import 'package:video_player_example/widget/bottom_bar.dart';
 import 'package:video_player_example/widget/gesture_dialog.dart';
 import 'package:video_player_example/widget/seek_dialog.dart';
@@ -43,6 +41,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   double _currentVolume;
   double _currentBrightness;
 
+  Timer _initTimer;
   /// 底部操作条显示时间倒计时
   Timer _hideTimer;
   /// 底部操作条是否显示
@@ -64,6 +63,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   void dispose() {
     _dispose(controller);
     _hideTimer?.cancel();
+    _initTimer?.cancel();
     animationController?.dispose();
     super.dispose();
   }
@@ -89,24 +89,31 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   void _initialize() {
     controller?.addListener(_updateState);
     _updateState();
+
+    if (chewieController.showControlsOnInitialize) {
+      _initTimer = Timer(Duration(milliseconds: 200), () {
+        setState(() {
+          _hideStuff = false;
+        });
+        _startHideTimer();
+      });
+    }
   }
 
   void _updateState() {
-    setState(() {
-      _latestValue = controller.value;
-      if ((controller.value != null && controller.value.isPlaying)) {
-        animationController.forward();
+    _latestValue = controller.value;
+    if ((controller.value != null && controller.value.isPlaying)) {
+      animationController.forward();
 
-      } else {
-        if (!controller.value.initialized) {
-          if (chewieController.autoPlay) {
-            animationController.forward();
-          }
-        } else {
-          animationController.reverse();
+    } else {
+      if (!controller.value.initialized) {
+        if (chewieController.autoPlay) {
+          animationController.forward();
         }
+      } else {
+        animationController.reverse();
       }
-    });
+    }
   }
   
   @override
@@ -125,7 +132,23 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
             hideStuff: _hideStuff,
             progress: animationController,
             playPause: _playPause,
-            progressBar: _buildProgressBar(),
+            onDragStart: () {
+              setState(() {
+                _progressBarDragging = true;
+                _hideTimer?.cancel();
+              });
+            },
+            onDragUpdate: () {
+              setState(() {
+
+              });
+            },
+            onDragEnd: () {
+              setState(() {
+                _progressBarDragging = false;
+                _startHideTimer();
+              });
+            },
           ),
         ),
         Positioned.fill(
@@ -157,26 +180,6 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
     }
     return Center(
       child: body ?? const SizedBox.shrink(),
-    );
-  }
-  
-  Widget _buildProgressBar() {
-    return MaterialVideoProgressBar(controller,
-      onDragStart: () {
-        _progressBarDragging = true;
-        _hideTimer?.cancel();
-      },
-      onDragEnd: () {
-        _progressBarDragging = false;
-        _startHideTimer();
-      },
-      colors: chewieController.materialProgressColors ??
-          ChewieProgressColors(
-            playedColor: Theme.of(context).accentColor,
-            handleColor: Theme.of(context).accentColor,
-            bufferedColor: Colors.white.withOpacity(.5),
-            backgroundColor: Colors.white.withOpacity(.3),
-          ),
     );
   }
 
@@ -218,11 +221,13 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         _initialOffset = details.globalPosition;
         controller.cancelTimer();
         _progressBarDragging = true;
+        setState(() {});
       },
       onHorizontalDragUpdate: (DragUpdateDetails details) {
         if (!_latestValue.initialized) {
           return;
         }
+        setState(() {});
         seekToRelativePosition(details.globalPosition);
       },
       onHorizontalDragEnd: (DragEndDetails details) {
@@ -234,6 +239,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         if (controller.value.isPlaying) {
           controller.createTimer();
         }
+        setState(() {});
       },
       onVerticalDragStart: (DragStartDetails details) {
         if (!_latestValue.initialized) {
@@ -269,6 +275,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         if (brightness != controller.value.brightness && _brightnessDragging) {
           controller.setBrightness(brightness);
         }
+        setState(() {});
       },
       onVerticalDragEnd: (DragEndDetails details) {
         if (!_latestValue.initialized) {
@@ -324,13 +331,11 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   Future<void> _reTry(Duration latestPosition) async {
     if (!_latestValue.initialized) {
       await controller.initialize();
+      chewieController.refresh();
     }
     animationController.forward();
     await controller.seekTo(latestPosition);
     await controller.play();
-    if (chewieController.initComplete != null) {
-      chewieController.initComplete();
-    }
   }
 
   Future<void> _playPause() async {
