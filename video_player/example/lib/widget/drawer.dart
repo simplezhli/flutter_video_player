@@ -22,10 +22,12 @@ class _MyDrawerState extends State<MyDrawer> {
   final List<double> speedList = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
   final List<String> scaleModeList = ['适应', '拉伸'];
   final List<String> mirrorModeList = ['无镜像', '水平镜像', '垂直镜像'];
+  final List<String> loopingList = ['关闭', '开启'];
   
   double _speed;
   int _scaleMode;
   int _mirrorMode;
+  bool _isLooping;
 
   @override
   void initState() {
@@ -52,6 +54,13 @@ class _MyDrawerState extends State<MyDrawer> {
     }
     if (value.mirrorMode != _mirrorMode) {
       _mirrorMode = value.mirrorMode;
+      setState(() {
+
+      });
+    }
+
+    if (value.isLooping != _isLooping) {
+      _isLooping = value.isLooping;
       setState(() {
 
       });
@@ -87,13 +96,44 @@ class _MyDrawerState extends State<MyDrawer> {
               children: List.generate(scaleModeList.length, (index) => _buildScaleModeButton(index)),
             ),
             const SizedBox(height: 35.0,),
+            Text('循环播放', style: const TextStyle(color: Colors.white54),),
+            const SizedBox(height: 15.0,),
+            Row(
+              children: List.generate(loopingList.length, (index) => _buildLoopingButton(index)),
+            ),
+            const SizedBox(height: 35.0,),
             Text('画面镜像', style: const TextStyle(color: Colors.white54),),
             const SizedBox(height: 15.0,),
             Row(
               children: List.generate(mirrorModeList.length, (index) => _buildMirrorModeButton(index)),
             ),
             const SizedBox(height: 35.0,),
+            
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoopingButton(int index) {
+    bool isSelected = widget.controller.videoPlayerController.value.isLooping;
+    if (index == 1 && isSelected) {
+      isSelected = true;
+    } else if (index == 0 && !isSelected) {
+      isSelected = true;
+    } else {
+      isSelected = false;
+    }
+    return InkWell(
+      onTap: () {
+        widget.controller.videoPlayerController.setLooping(index != 0);
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(right: 26.0),
+        child: Text(loopingList[index],
+          style: TextStyle(
+            color: isSelected ? Colors.lightBlue : Colors.white,
+          ),
         ),
       ),
     );

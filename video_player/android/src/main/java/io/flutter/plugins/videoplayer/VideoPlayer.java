@@ -173,6 +173,8 @@ final class VideoPlayer {
             errorMsg = "网络连接超时";
           } else if (errorInfo.getCode().getValue() == ErrorCode.ERROR_NETWORK_COULD_NOT_CONNECT.getValue()) {
             errorMsg = "无法连接到服务器";
+          } else if (errorInfo.getCode().getValue() == ErrorCode.ERROR_SERVER_VOD_INVALIDVIDEO_NOSTREAM.getValue()) {
+            errorMsg = "网络连接错误";
           } else {
             errorMsg = errorInfo.getMsg();
           }

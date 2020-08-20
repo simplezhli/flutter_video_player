@@ -24,7 +24,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _videoPlayerController1 = VideoPlayerController.network(
         'http://vfx.mtime.cn/Video/2019/03/09/mp4/190309153658147087.mp4');
     _videoPlayerController2 = VideoPlayerController.network(
-        'http://vfx.mtime.cn/Video/2019/03/12/mp4/190312083533415853.mp4');
+        'https://alivc-demo-vod.aliyuncs.com/6b357371ef3c45f4a06e2536fd534380/53733986bce75cfc367d7554a47638c0-fd.mp4');
     _chewieController = ChewieController(
       allowedScreenSleep: false,
       customControls: DeerControls(),

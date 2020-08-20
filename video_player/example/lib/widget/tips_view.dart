@@ -56,6 +56,9 @@ class _TipsViewState extends State<TipsView> {
   }
 
   void _updateState() {
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _latestValue = _controller?.value;
     });

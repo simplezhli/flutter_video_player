@@ -15,6 +15,7 @@ class _PlayerWithControlsState extends State<PlayerWithControls> {
 
   ChewieController _chewieController;
   int scaleMode;
+  double _aspectRatio;
   double aspectRatio;
   VideoPlayerController controller;
 
@@ -46,6 +47,16 @@ class _PlayerWithControlsState extends State<PlayerWithControls> {
     /// 视频尺寸变化时刷新
     if (scaleMode != _chewieController.videoPlayerController.value.scaleMode) {
       scaleMode = _chewieController.videoPlayerController.value.scaleMode;
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+
+      });
+    }
+    
+    if (_aspectRatio != _chewieController.videoPlayerController.value.aspectRatio) {
+      _aspectRatio = _chewieController.videoPlayerController.value.aspectRatio;
       if (!mounted) {
         return;
       }
@@ -98,7 +109,6 @@ class _PlayerWithControlsState extends State<PlayerWithControls> {
 
   Container _buildPlayerWithControls(
       ChewieController chewieController, BuildContext context) {
-    print(chewieController.videoPlayerController.value.mirrorMode);
     return Container(
       child: Stack(
         children: <Widget>[

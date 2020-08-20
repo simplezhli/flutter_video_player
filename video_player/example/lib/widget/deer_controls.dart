@@ -46,6 +46,8 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   Timer _hideTimer;
   /// 底部操作条是否显示
   bool _hideStuff = true;
+  /// 是否锁屏
+  bool _isLock = false;
   
   @override
   void initState() {
@@ -118,80 +120,132 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: _buildGestureView(),
-        ),
-        Positioned.fill(
-          child: _buildGestureDetector(),
-        ),
-        if (chewieController.isFullScreen)
-          Positioned(
-            left: 0, right: 0, top: 0,
-            child: AnimatedOpacity(
-              duration: Duration(milliseconds: 300),
-              opacity: _hideStuff ? 0.0 : 1.0,
-              child: Container(
-                height: 60.0,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.black.withOpacity(.3),
-                      Colors.transparent,
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0, .9],
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    BackButton(color: Colors.white,),
-                    Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.more_horiz, color: Colors.white,),
+    return WillPopScope(
+      onWillPop: () {
+        // 如果锁屏，先解锁
+        if (_isLock) {
+          setState(() {
+            _isLock = !_isLock;
+            _hideStuff = false;
+            _hideTimer?.cancel();
+            _startHideTimer();
+          });
+          return Future.value(false);
+        }
+        return Future.value(true);
+      },
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: _buildGestureView(),
+          ),
+          Positioned.fill(
+            child: _buildGestureDetector(),
+          ),
+          if (chewieController.isFullScreen)
+            Positioned(
+              left: 0, right: 0, top: 0,
+              child: _buildTitleBar(),
+            ),
+          if (chewieController.isFullScreen)
+            Positioned(
+              left: 10, bottom: 0, top: 0,
+              child: AnimatedOpacity(
+                duration: Duration(milliseconds: 300),
+                opacity: _hideStuff ? 0.0 : 1.0,
+                child: Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(6.0),
+                    ),
+                    width: 50,
+                    height: 50,
+                    child: IconButton(
+                      icon: Icon(_isLock ? Icons.lock : Icons.lock_open, color: Colors.white,),
                       onPressed: () {
-                        Scaffold.of(context).openEndDrawer();
+                        setState(() {
+                          _isLock = !_isLock;
+                        });
                       },
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        Positioned(
-          left: 0, right: 0, bottom: 0,
-          child: BottomBar(
-            hideStuff: _hideStuff,
-            progress: animationController,
-            playPause: _playPause,
-            onDragStart: () {
-              setState(() {
-                _progressBarDragging = true;
-                _hideTimer?.cancel();
-              });
-            },
-            onDragUpdate: () {
-              setState(() {
+          Positioned(
+            left: 0, right: 0, bottom: 0,
+            child: BottomBar(
+              hideStuff: _isLock ? true : _hideStuff,
+              progress: animationController,
+              playPause: _playPause,
+              onDragStart: () {
+                setState(() {
+                  _progressBarDragging = true;
+                  _hideTimer?.cancel();
+                });
+              },
+              onDragUpdate: () {
+                setState(() {
 
-              });
-            },
-            onDragEnd: () {
-              setState(() {
-                _progressBarDragging = false;
-                _startHideTimer();
-              });
-            },
+                });
+              },
+              onDragEnd: () {
+                setState(() {
+                  _progressBarDragging = false;
+                  _startHideTimer();
+                });
+              },
+            ),
+          ),
+          Positioned.fill(
+            child: TipsView(
+              replay: _playPause,
+              reTry: _reTry,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildTitleBar() {
+    return AnimatedOpacity(
+      duration: Duration(milliseconds: 300),
+      opacity: _isLock ? 0.0 : (_hideStuff ? 0.0 : 1.0),
+      child: Container(
+        height: 60.0,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.black.withOpacity(.3),
+              Colors.transparent,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: [0, .9],
           ),
         ),
-        Positioned.fill(
-          child: TipsView(
-            replay: _playPause,
-            reTry: _reTry,
-          ),
+        child: Row(
+          children: [
+            BackButton(color: Colors.white,),
+            Spacer(),
+            IconButton(
+              icon: Icon(Icons.more_horiz, color: Colors.white,),
+              onPressed: () {
+                if (_isLock) {
+                  return;
+                }
+                // 打卡菜单时，隐藏BottomBar和TitleBar
+                setState(() {
+                  _hideStuff = true;
+                });
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
   
@@ -227,7 +281,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   }
 
   void _startHideTimer() {
-    _hideTimer = Timer(const Duration(seconds: 3), () {
+    _hideTimer = Timer(const Duration(seconds: 5), () {
       setState(() {
         _hideStuff = true;
       });
@@ -248,6 +302,9 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
       },      
       onDoubleTap: _playPause,
       onHorizontalDragStart: (DragStartDetails details) {
+        if (_isLock) {
+          return;
+        }
         if (!_latestValue.initialized) {
           return;
         }
@@ -258,6 +315,9 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         setState(() {});
       },
       onHorizontalDragUpdate: (DragUpdateDetails details) {
+        if (_isLock) {
+          return;
+        }
         if (!_latestValue.initialized) {
           return;
         }
@@ -265,6 +325,9 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         seekToRelativePosition(details.globalPosition);
       },
       onHorizontalDragEnd: (DragEndDetails details) {
+        if (_isLock) {
+          return;
+        }
         if (!_latestValue.initialized) {
           return;
         }
@@ -276,6 +339,9 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         setState(() {});
       },
       onVerticalDragStart: (DragStartDetails details) {
+        if (_isLock) {
+          return;
+        }
         if (!_latestValue.initialized) {
           return;
         }
@@ -295,6 +361,9 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         });
       },
       onVerticalDragUpdate: (DragUpdateDetails details) {
+        if (_isLock) {
+          return;
+        }
         if (!_latestValue.initialized) {
           return;
         }
@@ -312,6 +381,9 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         setState(() {});
       },
       onVerticalDragEnd: (DragEndDetails details) {
+        if (_isLock) {
+          return;
+        }
         if (!_latestValue.initialized) {
           return;
         }
@@ -373,6 +445,13 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   }
 
   Future<void> _playPause() async {
+    if (_isLock) {
+      return;
+    }
+    /// 重新计时
+    _hideTimer?.cancel();
+    _startHideTimer();
+    
     bool isFinished = _latestValue.position >= _latestValue.duration;
 
     if (controller.value.isPlaying) {
