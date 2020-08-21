@@ -63,6 +63,9 @@ class _BottomBarState extends State<BottomBar> {
   }
 
   void _updateState() {
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _latestValue = controller.value;
     });

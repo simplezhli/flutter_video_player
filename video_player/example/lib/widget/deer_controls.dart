@@ -1,8 +1,11 @@
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:native_device_orientation/native_device_orientation.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_player.dart';
 import 'package:video_player_example/widget/bottom_bar.dart';
@@ -48,6 +51,8 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   bool _hideStuff = true;
   /// 是否锁屏
   bool _isLock = false;
+  
+  String _filePath;
   
   @override
   void initState() {
@@ -116,6 +121,18 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
         animationController.reverse();
       }
     }
+    
+    if (_latestValue.filePath != _filePath && chewieController.isFullScreen) {
+      /// 截图刷新
+      _filePath = _latestValue.filePath;
+      setState(() {
+        
+      });
+      _initTimer?.cancel();
+      _initTimer = Timer(Duration(seconds: 3), () {
+        controller.setFilePath("");
+      });
+    }
   }
   
   @override
@@ -130,6 +147,7 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
             _hideTimer?.cancel();
             _startHideTimer();
           });
+          _setOrientations();
           return Future.value(false);
         }
         return Future.value(true);
@@ -150,28 +168,28 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
           if (chewieController.isFullScreen)
             Positioned(
               left: 10, bottom: 0, top: 0,
-              child: AnimatedOpacity(
-                duration: Duration(milliseconds: 300),
-                opacity: _hideStuff ? 0.0 : 1.0,
-                child: Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black45,
-                      borderRadius: BorderRadius.circular(6.0),
-                    ),
-                    width: 50,
-                    height: 50,
-                    child: IconButton(
-                      icon: Icon(_isLock ? Icons.lock : Icons.lock_open, color: Colors.white,),
-                      onPressed: () {
-                        setState(() {
-                          _isLock = !_isLock;
-                        });
-                      },
-                    ),
+              child: _buildLock(),
+            ),
+          if (chewieController.isFullScreen)
+            Positioned(
+              right: 10, bottom: 0, top: 0,
+              child: _buildSnapshot(),
+            ),
+          if (chewieController.isFullScreen)
+            Positioned(
+              right: 70, bottom: 0, top: 60,
+              child: _latestValue.filePath != null && _latestValue.filePath != "" ? Align(
+                alignment: Alignment.topLeft,
+                child: Container(
+                  height: 100,
+                  padding: const EdgeInsets.all(5.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6.0),
                   ),
+                  child: Image.file(File(_latestValue.filePath)),
                 ),
-              ),
+              ) : const SizedBox.shrink(),
             ),
           Positioned(
             left: 0, right: 0, bottom: 0,
@@ -209,41 +227,99 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
     );
   }
   
-  Widget _buildTitleBar() {
-    return AnimatedOpacity(
-      duration: Duration(milliseconds: 300),
-      opacity: _isLock ? 0.0 : (_hideStuff ? 0.0 : 1.0),
-      child: Container(
-        height: 60.0,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.black.withOpacity(.3),
-              Colors.transparent,
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            stops: [0, .9],
-          ),
-        ),
-        child: Row(
-          children: [
-            BackButton(color: Colors.white,),
-            Spacer(),
-            IconButton(
-              icon: Icon(Icons.more_horiz, color: Colors.white,),
-              onPressed: () {
-                if (_isLock) {
-                  return;
-                }
-                // 打卡菜单时，隐藏BottomBar和TitleBar
-                setState(() {
-                  _hideStuff = true;
-                });
-                Scaffold.of(context).openEndDrawer();
+  Widget _buildSnapshot() {
+    return IgnorePointer(
+      ignoring: _hideStuff,
+      child: AnimatedOpacity(
+        duration: Duration(milliseconds: 300),
+        opacity: _isLock ? 0.0 : (_hideStuff ? 0.0 : 1.0),
+        child: Center(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black45,
+              borderRadius: BorderRadius.circular(6.0),
+            ),
+            width: 50,
+            height: 50,
+            child: IconButton(
+              icon: Icon(Icons.camera_alt, color: Colors.white,),
+              onPressed: () async {
+                await controller.snapshot();
               },
             ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildLock() {
+    return IgnorePointer(
+      ignoring: _hideStuff,
+      child: AnimatedOpacity(
+        duration: Duration(milliseconds: 300),
+        opacity: _hideStuff ? 0.0 : 1.0,
+        child: Center(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black45,
+              borderRadius: BorderRadius.circular(6.0),
+            ),
+            width: 50,
+            height: 50,
+            child: IconButton(
+              icon: Icon(_isLock ? Icons.lock : Icons.lock_open, color: Colors.white,),
+              onPressed: () async {
+                setState(() {
+                  _isLock = !_isLock;
+                });
+                await _setOrientations();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildTitleBar() {
+    return IgnorePointer(
+      ignoring: _hideStuff,
+      child: AnimatedOpacity(
+        duration: Duration(milliseconds: 300),
+        opacity: _isLock ? 0.0 : (_hideStuff ? 0.0 : 1.0),
+        child: Container(
+          height: 60.0,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.black.withOpacity(.3),
+                Colors.transparent,
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: [0, .9],
+            ),
+          ),
+          child: Row(
+            children: [
+              BackButton(color: Colors.white,),
+              Spacer(),
+              IconButton(
+                icon: Icon(Icons.more_horiz, color: Colors.white,),
+                onPressed: () {
+                  if (_isLock) {
+                    return;
+                  }
+                  // 打卡菜单时，隐藏BottomBar和TitleBar
+                  setState(() {
+                    _hideStuff = true;
+                  });
+                  Scaffold.of(context).openEndDrawer();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -445,15 +521,15 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
   }
 
   Future<void> _playPause() async {
-    if (_isLock) {
+    // 播放完成不受锁屏限制
+    bool isFinished = _latestValue.position >= _latestValue.duration;
+    if (!isFinished && _isLock) {
       return;
     }
     /// 重新计时
     _hideTimer?.cancel();
     _startHideTimer();
     
-    bool isFinished = _latestValue.position >= _latestValue.duration;
-
     if (controller.value.isPlaying) {
       animationController.reverse();
       await controller.pause();
@@ -469,4 +545,20 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
     }
   }
 
+  Future<void> _setOrientations() async {
+    if (_isLock) {
+      /// 获取屏幕方向，并锁定当前方向
+      final orientation = await NativeDeviceOrientationCommunicator().orientation();
+      if (orientation == NativeDeviceOrientation.landscapeLeft) {
+        SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
+      } else {
+        SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeRight]);
+      }
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeRight,
+        DeviceOrientation.landscapeLeft,
+      ]);
+    }
+  }
 }

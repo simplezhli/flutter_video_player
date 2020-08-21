@@ -102,6 +102,10 @@ abstract class VideoPlayerPlatform {
     throw UnimplementedError('stop() has not been implemented.');
   }
 
+  Future<void> snapshot(int textureId) {
+    throw UnimplementedError('snapshot() has not been implemented.');
+  }
+
   Future<void> setSpeed(int textureId, double volume) {
     throw UnimplementedError('setSpeed() has not been implemented.');
   }
@@ -249,6 +253,7 @@ class VideoEvent {
     this.state,
     this.percent,
     this.kbps,
+    this.filePath,
   });
 
   /// The type of the event.
@@ -274,6 +279,8 @@ class VideoEvent {
   final int percent;
   
   final double kbps;
+  
+  final String filePath;
 
   @override
   bool operator ==(Object other) {
@@ -342,6 +349,9 @@ enum VideoEventType {
 
   /// 缓冲结束
   loadingEnd,
+
+  /// 截图
+  snapshot,
 
   /// An unknown event has been received.
   unknown,

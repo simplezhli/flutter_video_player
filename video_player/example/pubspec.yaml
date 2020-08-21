@@ -8,6 +8,7 @@ dependencies:
     path: ../
   wakelock: 0.1.4+2
   auto_orientation: 1.0.6
+  native_device_orientation: 0.4.3
   connectivity: 0.4.9
 
 dev_dependencies:

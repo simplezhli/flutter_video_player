@@ -1,8 +1,10 @@
 package io.flutter.plugins.videoplayer;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
-import android.net.Uri;
+import android.media.MediaScannerConnection;
+import android.os.Build;
 import android.view.Surface;
 
 import com.aliyun.player.AliPlayer;
@@ -17,6 +19,7 @@ import com.aliyun.player.nativeclass.PlayerConfig;
 import com.aliyun.player.nativeclass.TrackInfo;
 import com.aliyun.player.source.UrlSource;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,6 +28,8 @@ import java.util.Map;
 
 import io.flutter.Log;
 import io.flutter.plugin.common.EventChannel;
+import io.flutter.plugins.videoplayer.utils.FileUtils;
+import io.flutter.plugins.videoplayer.utils.ThreadUtils;
 import io.flutter.view.TextureRegistry;
 
 final class VideoPlayer {
@@ -68,18 +73,28 @@ final class VideoPlayer {
     config.mHighBufferDuration = 1000;
     aliyunVodPlayer.setConfig(config);
 
-    Uri uri = Uri.parse(dataSource);
+//    CacheConfig cacheConfig = new CacheConfig();
+//    //开启缓存功能
+//    cacheConfig.mEnable = true;
+//    //能够缓存的单个文件最大时长。超过此长度则不缓存
+//    cacheConfig.mMaxDurationS = 3600;
+//    //缓存目录的位置(/storage/emulated/0/Android/data/包名/files/Media/cache/)
+//    cacheConfig.mDir = getDir(context) + "cache" + File.separator;
+//    //缓存目录的最大大小。超过此大小，将会删除最旧的缓存文件
+//    cacheConfig.mMaxSizeMB = 200;
+//    //设置缓存配置给到播放器
+//    aliyunVodPlayer.setCacheConfig(cacheConfig);
 
     UrlSource urlSource = new UrlSource();
     urlSource.setUri(dataSource);
     aliyunVodPlayer.setDataSource(urlSource);
 
-    setupVideoPlayer(eventChannel, textureEntry);
+    setupVideoPlayer(eventChannel, textureEntry, context);
     //准备播放
     prepare();
   }
 
-  private void setupVideoPlayer(EventChannel eventChannel, TextureRegistry.SurfaceTextureEntry textureEntry) {
+  private void setupVideoPlayer(EventChannel eventChannel, TextureRegistry.SurfaceTextureEntry textureEntry, Context context) {
 
     eventChannel.setStreamHandler(
         new EventChannel.StreamHandler() {
@@ -200,6 +215,40 @@ final class VideoPlayer {
         }
       }
     });
+    
+    //截图回调
+    aliyunVodPlayer.setOnSnapShotListener(new IPlayer.OnSnapShotListener(){
+      @Override
+      public void onSnapShot(Bitmap bitmap, int with, int height){
+        //获取到的bitmap。以及图片的宽高。
+        ThreadUtils.runOnSubThread(new Runnable() {
+          @Override
+          public void run() {
+            String videoPath = FileUtils.getDir(context) + "snapShot" + File.separator;
+            String bitmapPath = FileUtils.saveBitmap(bitmap, videoPath);
+
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+              FileUtils.saveImgToMediaStore(context.getApplicationContext(), bitmapPath,"image/png");
+            } else {
+              MediaScannerConnection.scanFile(context.getApplicationContext(),
+                      new String[] {bitmapPath},
+                      new String[] {"image/png"}, null);
+            }
+
+            ThreadUtils.runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                Map<String, Object> event = new HashMap<>();
+                event.put("event", "snapshot");
+                event.put("filePath", bitmapPath);
+                eventSink.success(event);
+              }
+            });
+          }
+        });
+      }
+    });
+    
   }
 
   void sendBufferingUpdate() {
@@ -324,6 +373,13 @@ final class VideoPlayer {
     aliyunVodPlayer.seekTo(location, IPlayer.SeekMode.Accurate);
   }
 
+  void snapshot() {
+    if (aliyunVodPlayer == null) {
+      return;
+    }
+    aliyunVodPlayer.snapshot();
+  }
+  
   long getPosition() {
     return mCurrentPosition;
   }

@@ -107,8 +107,7 @@ class _TipsViewState extends State<TipsView> {
         context,
         _latestValue.errorDescription,
       ):
-      Container(
-        color: Colors.black,
+      _TipsBackground(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -137,10 +136,10 @@ class _TipsViewState extends State<TipsView> {
   }
 
   Widget _buildReplayView() {
-    // 视频初始化完成，同时播放时长大于等于视频时长。
-    if (_latestValue.initialized && _latestValue.position >= _latestValue.duration && !_latestValue.isLoading) {
-      return Container(
-        color: Colors.black,
+    // 视频初始化完成，同时播放时长大于等于视频时长。如果设置自动循环播放，也不显示。
+    if (_latestValue.initialized && _latestValue.position >= _latestValue.duration 
+        && !_latestValue.isLoading && !_latestValue.isLooping) {
+      return _TipsBackground(
         child: Center(
           child: OutlineButton.icon(
             borderSide: BorderSide(color: Colors.white),
@@ -179,8 +178,7 @@ class _TipsViewState extends State<TipsView> {
       
       bool isNet = _chewieController.netState != ConnectivityResult.none;
       
-      return Container(
-        color: Colors.black,
+      return _TipsBackground(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -217,3 +215,36 @@ class _TipsViewState extends State<TipsView> {
     return null;
   }
 }
+
+class _TipsBackground extends StatelessWidget {
+
+  const _TipsBackground({
+    Key key,
+    @required this.child,
+  }) : super(key: key);
+
+  final Widget child;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            color: Colors.black,
+            child: child,
+          ),
+        ),
+        if (ChewieController.of(context).isFullScreen)
+          Positioned(
+            top: 12, left: 10, bottom: 0,
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: BackButton(color: Colors.white,),
+            ),
+          ),
+      ],
+    );
+  }
+}
+

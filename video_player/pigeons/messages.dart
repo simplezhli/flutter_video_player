@@ -45,6 +45,7 @@ abstract class VideoPlayerApi {
   void prepare(TextureMessage msg);
   void stop(TextureMessage msg);
   void reload(TextureMessage msg);
+  void snapshot(TextureMessage msg);
   void setScaleMode(PositionMessage msg);
   void setMirrorMode(PositionMessage msg);
   void selectTrack(PositionMessage msg);

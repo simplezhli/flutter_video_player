@@ -75,6 +75,11 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
+  Future<void> snapshot(int textureId) {
+    return _api.snapshot(TextureMessage()..textureId = textureId);
+  }
+
+  @override
   Future<void> reload(int textureId) {
     return _api.reload(TextureMessage()..textureId = textureId);
   }
@@ -187,6 +192,8 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
           );
         case 'loadingEnd':
           return VideoEvent(eventType: VideoEventType.loadingEnd);
+        case 'snapshot':
+          return VideoEvent(eventType: VideoEventType.snapshot, filePath: map['filePath'].toString());
         default:
           return VideoEvent(eventType: VideoEventType.unknown);
       }

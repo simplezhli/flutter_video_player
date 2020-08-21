@@ -190,6 +190,7 @@ public class Messages {
     void prepare(TextureMessage arg);
     void stop(TextureMessage arg);
     void reload(TextureMessage arg);
+    void snapshot(TextureMessage arg);
     void setScaleMode(PositionMessage arg);
     void setMirrorMode(PositionMessage arg);
     void selectTrack(PositionMessage arg);
@@ -438,6 +439,27 @@ public class Messages {
               @SuppressWarnings("ConstantConditions")
               TextureMessage input = TextureMessage.fromMap((HashMap)message);
               api.reload(input);
+              wrapped.put("result", null);
+            }
+            catch (Exception exception) {
+              wrapped.put("error", wrapError(exception));
+            }
+            reply.reply(wrapped);
+          });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(binaryMessenger, "dev.flutter.pigeon.VideoPlayerApi.snapshot", new StandardMessageCodec());
+        if (api != null) {
+          channel.setMessageHandler((message, reply) -> {
+            HashMap<String, HashMap> wrapped = new HashMap<>();
+            try {
+              @SuppressWarnings("ConstantConditions")
+              TextureMessage input = TextureMessage.fromMap((HashMap)message);
+              api.snapshot(input);
               wrapped.put("result", null);
             }
             catch (Exception exception) {

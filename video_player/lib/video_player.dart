@@ -42,6 +42,7 @@ class VideoPlayerValue {
     this.initialBrightness,
     this.percent = 0,
     this.kbps = 0,
+    this.filePath,
     this.errorDescription,
   });
 
@@ -104,6 +105,8 @@ class VideoPlayerValue {
   
   /// 视频加载速度
   final double kbps;
+  
+  final String filePath;
 
   /// A description of the error if present.
   ///
@@ -155,6 +158,7 @@ class VideoPlayerValue {
     VideoState state,
     int percent,
     double kbps,
+    String filePath,
     String errorDescription,
   }) {
     return VideoPlayerValue(
@@ -175,6 +179,7 @@ class VideoPlayerValue {
       state: state ?? this.state,
       percent: percent ?? this.percent,
       kbps: kbps ?? this.kbps,
+      filePath: filePath ?? this.filePath,
       errorDescription: errorDescription,
     );
   }
@@ -195,6 +200,7 @@ class VideoPlayerValue {
         'initialBrightness: $initialBrightness, '
         'percent: $percent, '
         'kbps: $kbps, '
+        'filePath: $filePath, '
         'errorDescription: $errorDescription)';
   }
 }
@@ -347,6 +353,9 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         case VideoEventType.loadingEnd:
           value = value.copyWith(isLoading: false);
           break;
+        case VideoEventType.snapshot:
+          value = value.copyWith(filePath: event.filePath);
+          break;
         case VideoEventType.unknown:
           break;
       }
@@ -385,6 +394,10 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     _lifeCycleObserver?.dispose();
     _isDisposed = true;
     super.dispose();
+  }
+  
+  void setFilePath(String filePath) {
+    value = value.copyWith(filePath: filePath);
   }
 
   Future<void> prepare() async {
@@ -432,6 +445,13 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     }
     cancelTimer();
     await _videoPlayerPlatform.stop(_textureId);
+  }
+
+  Future<void> snapshot() async {
+    if (!value.initialized || _isDisposed) {
+      return;
+    }
+    await _videoPlayerPlatform.snapshot(_textureId);
   }
 
   Future<void> reload() async {

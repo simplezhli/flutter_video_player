@@ -109,6 +109,7 @@ class ChewieState extends State<Chewie> {
       _ChewieControllerProvider controllerProvider) {
     return Scaffold(
       resizeToAvoidBottomPadding: false,
+      endDrawerEnableOpenDragGesture: false,
       endDrawer: MyDrawer(controller: widget.controller,),
       body: controllerProvider,
     );

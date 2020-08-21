@@ -138,27 +138,32 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi, Activit
     return result;
   }
 
+  @Override
   public void dispose(TextureMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.dispose();
     videoPlayers.remove(arg.getTextureId());
   }
 
+  @Override
   public void setLooping(LoopingMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.setLooping(arg.getIsLooping());
   }
 
+  @Override
   public void setVolume(VolumeMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.setVolume(arg.getVolume());
   }
-
+  
+  @Override
   public void setSpeed(VolumeMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.setSpeed(arg.getVolume());
   }
-  
+
+  @Override
   public void setBrightness(VolumeMessage arg) {
     float brightness = Float.parseFloat(arg.getVolume().toString());
     Window window = flutterState.activity.getWindow();
@@ -170,7 +175,8 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi, Activit
     }
     window.setAttributes(lp);
   }
-  
+
+  @Override
   public Messages.BrightnessMessage getBrightness(TextureMessage arg) {
     ContentResolver cr = flutterState.activity.getContentResolver();
     int systemBrightness = Settings.System.getInt(cr, Settings.System.SCREEN_BRIGHTNESS,0);
@@ -194,24 +200,34 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi, Activit
     return 255f;
   }
 
+  @Override
   public void prepare(TextureMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.prepare();
   }
 
+  @Override
   public void play(TextureMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.play();
   }
 
+  @Override
   public void stop(TextureMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.stop();
   }
 
+  @Override
   public void reload(TextureMessage arg) {
     VideoPlayer player = videoPlayers.get(arg.getTextureId());
     player.reload();
+  }
+  
+  @Override
+  public void snapshot(TextureMessage arg) {
+    VideoPlayer player = videoPlayers.get(arg.getTextureId());
+    player.snapshot();
   }
 
   @Override

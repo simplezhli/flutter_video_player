@@ -58,6 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(void)prepare:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)stop:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)reload:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)snapshot:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)setScaleMode:(FLTPositionMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)setMirrorMode:(FLTPositionMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 -(void)selectTrack:(FLTPositionMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
