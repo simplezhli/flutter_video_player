@@ -187,7 +187,7 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
         case 'loadingProgress':
           return VideoEvent(
             eventType: VideoEventType.loadingProgress,
-            percent: map['percent']?.toInt() ?? 0,
+            percent: map['percent']?.toDouble() ?? 0,
             kbps: map['kbps']?.toDouble() ?? 0.0,
           );
         case 'loadingEnd':
