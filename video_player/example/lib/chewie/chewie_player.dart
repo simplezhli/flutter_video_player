@@ -111,7 +111,10 @@ class ChewieState extends State<Chewie> {
       resizeToAvoidBottomPadding: false,
       endDrawerEnableOpenDragGesture: false,
       endDrawer: MyDrawer(controller: widget.controller,),
-      body: controllerProvider,
+      body: Container(
+        color: Colors.black,
+        child: SafeArea(child: controllerProvider),
+      ),
     );
   }
 

@@ -55,68 +55,70 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       appBar: AppBar(
         title: const Text('Video player example'),
       ),
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: Chewie(
-              controller: _chewieController,
-            ),
-          ),
-          FlatButton(
-            onPressed: () {
-              _chewieController.enterFullScreen();
-            },
-            child: Text('Fullscreen'),
-          ),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: FlatButton(
-                  onPressed: () {
-                    setState(() {
-                      _chewieController.dispose();
-                      _videoPlayerController2.pause();
-                      _chewieController = ChewieController(
-                        customControls: DeerControls(),
-                        videoPlayerController: _videoPlayerController1,
-                        autoInitialize: true,
-                        autoPlay: false,
-                        looping: false,
-                      );
-                    });
-                  },
-                  child: Padding(
-                    child: Text("Video 1"),
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                  ),
-                ),
+      body: SafeArea(
+        child: Column(
+          children: <Widget>[
+            Expanded(
+              child: Chewie(
+                controller: _chewieController,
               ),
-              Expanded(
-                child: FlatButton(
-                  onPressed: () {
-                    setState(() {
-                      _chewieController.dispose();
-                      _videoPlayerController1.pause();
-                      _chewieController = ChewieController(
-                        showControlsOnInitialize: true,
-                        customControls: DeerControls(),
-                        startAt: Duration(seconds: 5), // 指定播放位置
-                        videoPlayerController: _videoPlayerController2,
-                        autoInitialize: true,
-                        autoPlay: false, // 不自动播放
-                        looping: true, // 循环播放
-                      );
-                    });
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: Text("Video 2"),
+            ),
+            FlatButton(
+              onPressed: () {
+                _chewieController.enterFullScreen();
+              },
+              child: Text('Fullscreen'),
+            ),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: FlatButton(
+                    onPressed: () {
+                      setState(() {
+                        _chewieController.dispose();
+                        _videoPlayerController2.pause();
+                        _chewieController = ChewieController(
+                          customControls: DeerControls(),
+                          videoPlayerController: _videoPlayerController1,
+                          autoInitialize: true,
+                          autoPlay: false,
+                          looping: false,
+                        );
+                      });
+                    },
+                    child: Padding(
+                      child: Text("Video 1"),
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                    ),
                   ),
                 ),
-              )
-            ],
-          ),
-        ],
+                Expanded(
+                  child: FlatButton(
+                    onPressed: () {
+                      setState(() {
+                        _chewieController.dispose();
+                        _videoPlayerController1.pause();
+                        _chewieController = ChewieController(
+                          showControlsOnInitialize: true,
+                          customControls: DeerControls(),
+                          startAt: Duration(seconds: 5), // 指定播放位置
+                          videoPlayerController: _videoPlayerController2,
+                          autoInitialize: true,
+                          autoPlay: false, // 不自动播放
+                          looping: true, // 循环播放
+                        );
+                      });
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text("Video 2"),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

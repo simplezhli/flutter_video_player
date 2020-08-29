@@ -42,33 +42,15 @@
 @property(nonatomic, assign) CVPixelBufferRef newPixelBuffer;
 @property(nonatomic, assign) CVPixelBufferRef lastestPixelBuffer;
 @property(nonatomic, readonly) bool disposed;
-@property(nonatomic, readonly) bool isPlaying;
-@property(nonatomic) bool isLooping;
 @property(nonatomic, readonly) bool isInitialized;
-- (instancetype)initWithURL:(NSURL*)url frameUpdater:(FLTFrameUpdater*)frameUpdater;
-- (void)play;
-- (void)pause;
-- (void)setIsLooping:(bool)isLooping;
-- (void)updatePlayingState;
-
+@property(nonatomic, readonly) int64_t bufferedPosition;
 @end
 
-static void* timeRangeContext = &timeRangeContext;
-static void* statusContext = &statusContext;
-static void* playbackLikelyToKeepUpContext = &playbackLikelyToKeepUpContext;
-static void* playbackBufferEmptyContext = &playbackBufferEmptyContext;
-static void* playbackBufferFullContext = &playbackBufferFullContext;
 
 @implementation FLTVideoPlayer
 - (instancetype)initWithAsset:(NSString*)asset frameUpdater:(FLTFrameUpdater*)frameUpdater {
   NSString* path = [[NSBundle mainBundle] pathForResource:asset ofType:nil];
   return [self initWithURL:[NSURL fileURLWithPath:path] frameUpdater:frameUpdater];
-}
-
-- (void)itemDidPlayToEndTime:(NSNotification*)notification {
-  if (_eventSink) {
-    _eventSink(@{@"event" : @"completed"});
-  }
 }
 
 - (instancetype)initWithURL:(NSURL*)url frameUpdater:(FLTFrameUpdater*)frameUpdater {
@@ -81,7 +63,6 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
   self = [super init];
   NSAssert(self, @"super init cannot be nil");
   _isInitialized = false;
-  _isPlaying = false;
   _disposed = false;
   _lastestPixelBuffer = nil;
   _frameUpdater = frameUpdater;
@@ -95,7 +76,7 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
   defaultConfig.clearShowWhenStop = YES;
   defaultConfig.pixelBufferOutputFormat = kCVPixelFormatType_32BGRA;
   [_player setConfig:defaultConfig];
-    
+  _player.enableHardwareDecoder = YES;
   //设置播放源
   [_player setUrlSource:source];
   //准备播放
@@ -127,25 +108,29 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
         case AVPEventPrepareDone: {
             // 准备完成
             [self sendInitialized];
+            break;
         }
-            break;
-        case AVPEventCompletion:
+        case AVPEventCompletion: {
             // 播放完成
+            if (_eventSink) {
+              _eventSink(@{@"event" : @"completed"});
+            }
             break;
+        }
         case AVPEventLoadingStart: {
             // 缓冲开始
             if (_eventSink != nil) {
               _eventSink(@{@"event" : @"bufferingStart"});
             }
-        }
             break;
+        }
         case AVPEventLoadingEnd: {
             // 缓冲完成
             if (_eventSink != nil) {
               _eventSink(@{@"event" : @"bufferingEnd"});
             }
-        }
             break;
+        }
         default:
             break;
     }
@@ -158,7 +143,8 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
  */
 - (void)onBufferedPositionUpdate:(AliPlayer*)player position:(int64_t)position {
     // 更新缓冲进度
-    if (_eventSink != nil) {
+    if (_eventSink != nil && _bufferedPosition != position) {
+      _bufferedPosition = position;
       NSMutableArray<NSArray<NSNumber*>*>* values = [[NSMutableArray alloc] init];
       int64_t start = 0;
       [values addObject:@[ @(start), @(position) ]];
@@ -321,22 +307,10 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
     return [PHAssetCollection fetchAssetCollectionsWithLocalIdentifiers:@[assetCollectionLocalIdentifier] options:nil].lastObject;
 }
 
-
-- (void)updatePlayingState {
-  if (!_isInitialized) {
-    return;
-  }
-  if (_isPlaying) {
-    [_player start];
-  } else {
-    [_player pause];
-  }
-}
-
 - (void)sendInitialized {
   if (_eventSink && !_isInitialized) {
-    int width = self.player.width;
-    int height = self.player.height;
+    int width = _player.width;
+    int height = _player.height;
 
     // The player has not yet initialized.
     if (height == CGSizeZero.height && width == CGSizeZero.width) {
@@ -348,8 +322,8 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
     }
     
     if ([_player rotation] == 90 || [_player rotation] == 270) {
-        width = self.player.height;
-        height = self.player.width;
+        width = _player.height;
+        height = _player.width;
     }
 
     _isInitialized = true;
@@ -363,13 +337,17 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
 }
 
 - (void)play {
-  _isPlaying = true;
-  [self updatePlayingState];
+  if (!_isInitialized) {
+    return;
+  }
+  [_player start];
 }
 
 - (void)pause {
-  _isPlaying = false;
-  [self updatePlayingState];
+  if (!_isInitialized) {
+    return;
+  }
+  [_player pause];
 }
 
 - (void)prepare {
@@ -403,13 +381,13 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
 - (void)setScaleMode:(int)value {
     switch (value) {
         case 1:
-            self.player.scalingMode = AVP_SCALINGMODE_SCALEASPECTFILL;
+            _player.scalingMode = AVP_SCALINGMODE_SCALEASPECTFILL;
             break;
         case 2:
-            self.player.scalingMode = AVP_SCALINGMODE_SCALETOFILL;
+            _player.scalingMode = AVP_SCALINGMODE_SCALETOFILL;
             break;
         default:
-            self.player.scalingMode = AVP_SCALINGMODE_SCALEASPECTFIT;
+            _player.scalingMode = AVP_SCALINGMODE_SCALEASPECTFIT;
             break;
     }
 }
@@ -417,19 +395,19 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
 - (void)setMirrorMode:(int)value {
     switch (value) {
         case 1:
-            self.player.mirrorMode = AVP_MIRRORMODE_HORIZONTAL;
+            _player.mirrorMode = AVP_MIRRORMODE_HORIZONTAL;
             break;
         case 2:
-            self.player.mirrorMode = AVP_MIRRORMODE_VERTICAL;
+            _player.mirrorMode = AVP_MIRRORMODE_VERTICAL;
             break;
         default:
-            self.player.mirrorMode = AVP_MIRRORMODE_NONE;
+            _player.mirrorMode = AVP_MIRRORMODE_NONE;
             break;
     }
 }
 
 - (void)setIsLooping:(bool)isLooping {
-  self.player.loop = isLooping;
+  _player.loop = isLooping;
 }
 
 - (void)setVolume:(double)volume {
@@ -441,18 +419,22 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
 }
 
 - (BOOL)onVideoPixelBuffer:(CVPixelBufferRef)pixelBuffer pts:(int64_t)pts {
-  self.newPixelBuffer = pixelBuffer;
+  _newPixelBuffer = pixelBuffer;
   [_frameUpdater refreshDisplay];
   return NO;
 }
 
+- (BOOL)onVideoRawBuffer:(uint8_t **)buffer lineSize:(int32_t *)lineSize pts:(int64_t)pts width:(int32_t)width height:(int32_t)height {
+   return NO;
+}
+
 - (CVPixelBufferRef)copyPixelBuffer {
-  if(self.newPixelBuffer!=nil){
+  if(_newPixelBuffer != nil){
       //参考 https://github.com/RandyWei/flt_video_player
-      CVPixelBufferRetain(self.newPixelBuffer);
-      CVPixelBufferRef pixelBuffer = self.lastestPixelBuffer;
-      while (!OSAtomicCompareAndSwapPtrBarrier(pixelBuffer, self.newPixelBuffer, (void **) &_lastestPixelBuffer)) {
-          pixelBuffer = self.lastestPixelBuffer;
+      CVPixelBufferRetain(_newPixelBuffer);
+      CVPixelBufferRef pixelBuffer = _lastestPixelBuffer;
+      while (!OSAtomicCompareAndSwapPtrBarrier(pixelBuffer, _newPixelBuffer, (void **) &_lastestPixelBuffer)) {
+          pixelBuffer = _lastestPixelBuffer;
       }
       return pixelBuffer;
   }
@@ -497,8 +479,8 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
 }
 
 - (void)releaseLatestPixelBuffer {
-  if (self.lastestPixelBuffer) {
-    CFAutorelease(self.lastestPixelBuffer);
+  if (_lastestPixelBuffer) {
+    CFAutorelease(_lastestPixelBuffer);
   }
 }
 
@@ -644,8 +626,7 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
 }
 
 - (void)setBrightness:(FLTVolumeMessage*)input error:(FlutterError**)error {
-//  FLTVideoPlayer* player = _players[input.textureId];
-//    [player setBrightness:[input.volume doubleValue]];
+  [UIScreen mainScreen].brightness = [input.volume doubleValue];
 }
 
 - (void)setSpeed:(FLTVolumeMessage*)input error:(FlutterError**)error {
@@ -654,9 +635,8 @@ static void* playbackBufferFullContext = &playbackBufferFullContext;
 }
 
 - (FLTBrightnessMessage*)getBrightness:(FLTTextureMessage*)input error:(FlutterError**)error {
-//  FLTVideoPlayer* player = _players[input.textureId];
   FLTBrightnessMessage* result = [[FLTBrightnessMessage alloc] init];
-//  result.screenBrightness = @([player getBrightness]);
+  result.screenBrightness = @([UIScreen mainScreen].brightness);
   return result;
 }
 
