@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_example/chewie/chewie_progress_colors.dart';
 import 'package:video_player_example/chewie/player_with_controls.dart';
+import 'package:video_player_example/network_aware_state.dart';
 import 'package:video_player_example/widget/drawer.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:connectivity/connectivity.dart';
@@ -39,28 +40,21 @@ class Chewie extends StatefulWidget {
   final Function afterFullScreen;
 
   @override
-  ChewieState createState() {
-    return ChewieState();
-  }
+  ChewieState createState() => ChewieState();
 }
 
-class ChewieState extends State<Chewie> {
+class ChewieState extends State<Chewie> implements NetworkAwareState<Chewie>{
   bool _isFullScreen = false;
-  StreamSubscription<ConnectivityResult> _subscription;
-  
+
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(listener);
-    if (widget.controller.isCheckConnectivity) {
-      _subscription = Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
-    }
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(listener);
-    _subscription?.cancel();
     super.dispose();
   }
 
@@ -71,20 +65,7 @@ class ChewieState extends State<Chewie> {
     }
     super.didUpdateWidget(oldWidget);
   }
-  
-  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
-    switch (result) {
-      case ConnectivityResult.wifi:
-      case ConnectivityResult.mobile:
-      case ConnectivityResult.none:
-        widget.controller.setNetState(result);
-        break;
-      default:
-        widget.controller.setNetState(ConnectivityResult.none);
-        break;
-    }
-  }
-  
+
   void listener() async {
     if (widget.controller.isFullScreen && !_isFullScreen) {
       _isFullScreen = true;
@@ -185,6 +166,20 @@ class ChewieState extends State<Chewie> {
     SystemChrome.setPreferredOrientations(
         widget.controller.deviceOrientationsAfterFullScreen);
 //    AutoOrientation.portraitAutoMode();
+  }
+
+  @override
+  void onDisconnected() {
+    if (widget.controller.isCheckConnectivity) {
+      widget.controller.setNetState(ConnectivityResult.none);
+    }
+  }
+
+  @override
+  void onReconnected(ConnectivityResult result) {
+    if (widget.controller.isCheckConnectivity) {
+      widget.controller.setNetState(result);
+    }
   }
 }
 
@@ -318,27 +313,11 @@ class ChewieController extends ChangeNotifier {
 
   bool get isPlaying => videoPlayerController.value.isPlaying;
 
-  final Connectivity _connectivity = Connectivity();
-  
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> _initConnectivity() async {
-    ConnectivityResult result;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      result = await _connectivity.checkConnectivity();
-    } on PlatformException catch (e) {
-      print(e.toString());
-    }
-    await setNetState(result);
-  }
 
   Future<void> _initialize() async {
     await videoPlayerController.setLooping(looping);
     /// 判断是否需要检测网络环境
-    if (isCheckConnectivity) {
-      /// 等待网络为wifi时初始化
-      _initConnectivity();
-    } else {
+    if (!isCheckConnectivity) {
       await _initPlayer();
     }
     
