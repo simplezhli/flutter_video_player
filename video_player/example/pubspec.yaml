@@ -9,7 +9,7 @@ dependencies:
   wakelock: 0.1.4+2
   auto_orientation: 1.0.6
   native_device_orientation: 0.4.3
-  connectivity: 0.4.9
+  connectivity: 0.4.9+2
 
 dev_dependencies:
   flutter_test:
@@ -20,5 +20,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-   - assets/Butterfly-209.mp4

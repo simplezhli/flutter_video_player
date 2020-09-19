@@ -121,7 +121,6 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi, Activit
               handle,
               "asset:///" + assetLookupKey,
               null);
-      videoPlayers.put(handle.id(), player);
     } else {
       player =
           new VideoPlayer(
@@ -130,8 +129,8 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi, Activit
               handle,
               arg.getUri(),
               arg.getFormatHint());
-      videoPlayers.put(handle.id(), player);
     }
+    videoPlayers.put(handle.id(), player);
 
     TextureMessage result = new TextureMessage();
     result.setTextureId(handle.id());
@@ -276,7 +275,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi, Activit
                     pluginBinding.getBinaryMessenger(),
                     FlutterMain::getLookupKeyForAsset,
                     FlutterMain::getLookupKeyForAsset,
-                    pluginBinding.getFlutterEngine().getRenderer());
+                    pluginBinding.getTextureRegistry());
     flutterState.startListening(this, pluginBinding.getBinaryMessenger());
   }
 
