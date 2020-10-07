@@ -52,7 +52,7 @@ SPEC CHECKSUMS:
   native_device_orientation: 3b4cfc9565a7b879cc4fde282b3e27745e852d0d
   Reachability: 33e18b67625424e47b6cde6d202dce689ad7af96
   video_player: 89d65df1d4472be5dacbeabed0ebb723fce7d353
-  wakelock: 0d4a70faf8950410735e3f61fb15d517c8a6efc4
+  wakelock: bfc7955c418d0db797614075aabbc58a39ab5107
 
 PODFILE CHECKSUM: b1f7a399522c118a74b177b13c01eca692aa7e6d
 

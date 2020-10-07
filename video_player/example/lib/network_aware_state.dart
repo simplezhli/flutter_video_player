@@ -3,12 +3,11 @@ import 'dart:async';
 import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-export 'package:connectivity/connectivity.dart';
 
 /// https://medium.com/@ducduy.dev/flutter-implement-network-aware-in-your-flutter-app-1db6bc66430a
 mixin NetworkAwareState<T extends StatefulWidget> on State<T> {
 
-  bool _isDisconnected = false;
+  bool _isDisconnected = true;
 
   StreamSubscription<ConnectivityResult> _networkSubscription;
   final Connectivity _connectivity = Connectivity();

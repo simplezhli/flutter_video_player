@@ -358,6 +358,9 @@ class _DeerControlsState extends State<DeerControls> with SingleTickerProviderSt
 
   void _startHideTimer() {
     _hideTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _hideStuff = true;
       });

@@ -19,7 +19,7 @@ flutter:
         default_package: video_player_web
 
 dependencies:
-  meta: "^1.0.5"
+  meta: ^1.0.5
   video_player_platform_interface:
     path: ../video_player_platform_interface
 
@@ -29,8 +29,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  pedantic: ^1.8.0
-  pigeon: 0.1.4
+  pedantic: ^1.9.2
+  pigeon: 0.1.9
 
 environment:
   sdk: ">=2.1.0 <3.0.0"

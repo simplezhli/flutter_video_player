@@ -33,10 +33,6 @@ import io.flutter.plugins.videoplayer.utils.ThreadUtils;
 import io.flutter.view.TextureRegistry;
 
 final class VideoPlayer {
-  private static final String FORMAT_SS = "ss";
-  private static final String FORMAT_DASH = "dash";
-  private static final String FORMAT_HLS = "hls";
-  private static final String FORMAT_OTHER = "other";
 
   private AliPlayer aliyunVodPlayer;
 

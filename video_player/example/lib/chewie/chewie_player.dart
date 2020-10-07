@@ -43,7 +43,7 @@ class Chewie extends StatefulWidget {
   ChewieState createState() => ChewieState();
 }
 
-class ChewieState extends State<Chewie> implements NetworkAwareState<Chewie>{
+class ChewieState extends State<Chewie> with NetworkAwareState<Chewie> {
   bool _isFullScreen = false;
 
   @override
@@ -178,6 +178,7 @@ class ChewieState extends State<Chewie> implements NetworkAwareState<Chewie>{
   @override
   void onReconnected(ConnectivityResult result) {
     if (widget.controller.isCheckConnectivity) {
+      print(result);
       widget.controller.setNetState(result);
     }
   }
