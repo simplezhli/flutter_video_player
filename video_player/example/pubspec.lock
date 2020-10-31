@@ -91,7 +91,7 @@ packages:
       name: connectivity
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "0.4.9+2"
+    version: "2.0.0"
   connectivity_for_web:
     dependency: transitive
     description:
@@ -513,7 +513,7 @@ packages:
       name: wakelock
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "0.2.0+1"
+    version: "0.2.1"
   wakelock_platform_interface:
     dependency: transitive
     description:

@@ -6,10 +6,10 @@ dependencies:
     sdk: flutter
   video_player:
     path: ../
-  wakelock: 0.2.0+1
+  wakelock: 0.2.1
   auto_orientation: 1.0.6
   native_device_orientation: 0.4.3
-  connectivity: 0.4.9+2
+  connectivity: 2.0.0
 
 dev_dependencies:
   flutter_test:
